@@ -7,7 +7,6 @@ export default function LoginPage() {
         path="/auth/login"
         routing="path"
         signUpUrl="/auth/register"
-        fallbackRedirectUrl="/dashboard"
         appearance={{ elements: { card: "shadow-none border border-border bg-background" } }}
       />
     </div>

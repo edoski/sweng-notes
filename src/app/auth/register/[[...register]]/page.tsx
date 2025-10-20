@@ -7,7 +7,6 @@ export default function RegisterPage() {
         path="/auth/register"
         routing="path"
         signInUrl="/auth/login"
-        fallbackRedirectUrl="/dashboard"
         appearance={{ elements: { card: "shadow-none border border-border bg-background" } }}
       />
     </div>
