@@ -5,29 +5,32 @@
   "scripts": {
     "dev": "run-p dev:convex dev:next",
     "dev:convex": "convex dev",
-    "dev:next": "next dev --turbopack"
+    "dev:next": "next dev --turbopack",
+    "vercel-build": "convex codegen && convex deploy -y && next build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "convex": "^1.27.4",
-    "lucide-react": "^0.536.0",
-    "next": "15.5.4",
+    "convex": "^1.28.0",
+    "lucide-react": "^0.546.0",
+    "next": "15.5.6",
     "npm-run-all": "^4.1.5",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.1",
-    "@tailwindcss/postcss": "^4.1.14",
-    "@types/node": "^20.19.19",
-    "@types/react": "^19.2.1",
-    "@types/react-dom": "^19.2.0",
-    "eslint": "^9.37.0",
-    "eslint-config-next": "15.5.4",
-    "tailwindcss": "^4.1.14",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.6",
+    "tailwindcss": "^4",
     "tw-animate-css": "^1.4.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5"
   }
 }
