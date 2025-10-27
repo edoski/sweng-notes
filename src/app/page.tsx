@@ -1,33 +1,111 @@
-import { auth } from "@clerk/nextjs/server"
-import { redirect } from "next/navigation"
-import {UserButton} from "@clerk/nextjs";
+"use client"
 
-export default async function HomePage() {
-  const { userId } = await auth()
-  if (!userId) redirect("/auth/login")
-  return (
-      <main>
-          <h1>Home</h1>
-          <UserButton
-              showName
-              appearance={{
-                  elements: {
-                      rootBox: "w-full group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:mx-auto",
-                      userButtonTrigger:
-                          "w-full items-center justify-start gap-3 rounded-lg px-3 py-3 text-left hover:bg-muted/40 transition group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:rounded-md group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-0 group-data-[collapsible=icon]:mx-auto",
-                      userButtonAvatarBox: "order-1 h-8 w-8 group-data-[collapsible=icon]:mx-auto",
-                      userButtonOuterIdentifier:
-                          "order-2 text-sm font-medium !text-foreground group-data-[collapsible=icon]:hidden",
-                      userButtonTriggerIdentifier:
-                          "order-2 text-sm font-medium !text-foreground group-data-[collapsible=icon]:hidden",
-                      userButtonChevron: "h-4 w-4 text-muted-foreground group-data-[collapsible=icon]:hidden",
-                      userButtonTriggerIcon: "group-data-[collapsible=icon]:mx-auto",
-                  },
-              }}
-              userProfileMode="modal"
-          />
+import { useMemo, useCallback } from "react"
+import { RedirectToSignIn, useUser } from "@clerk/nextjs"
+import { WorkspaceShell } from "@/components/features/workspace/workspace-shell"
+import { WorkspaceDataProvider } from "@/components/features/workspace/workspace-data-context"
+import { NoteTabs } from "@/components/features/notes/note-tabs"
+import { useWorkspaceData } from "@/hooks/use-workspace-data"
+import { useWorkspaceActions } from "@/hooks/use-workspace-actions"
+import { useWorkspaceUrlState } from "@/hooks/use-workspace-url-state"
+import { usePersistedTabs } from "@/hooks/use-persisted-tabs"
 
-      </main>
+/**
+ * Sprint 2 Version: Simplified Workspace Page
+ * - Uses mock data instead of Convex
+ * - Clerk authentication still works
+ * - UI fully functional but no backend interactions
+ */
 
+function Workspace() {
+  // URL-based state (filters, active note)
+  const urlState = useWorkspaceUrlState()
+
+  // Persisted tabs (sessionStorage)
+  const { openNotes, openNote: addToTabs, closeNote: removeFromTabs } = usePersistedTabs()
+
+  // Wrapper to open a note: add to tabs AND set as active in URL
+  const openNote = useCallback(
+    (noteId: string) => {
+      addToTabs(noteId)
+      urlState.setActiveNoteId(noteId)
+    },
+    [addToTabs, urlState]
   )
+
+  // Wrapper to close a note: remove from tabs AND handle active note switching
+  const closeNote = useCallback(
+    (noteId: string) => {
+      removeFromTabs(noteId)
+
+      // If closing the active note, switch to another tab or clear active
+      if (urlState.activeNoteId === noteId) {
+        const remainingTabs = openNotes.filter((id) => id !== noteId)
+        const newActiveNote = remainingTabs[remainingTabs.length - 1] ?? null
+        urlState.setActiveNoteId(newActiveNote)
+      }
+    },
+    [removeFromTabs, urlState, openNotes]
+  )
+
+  // Fetch all workspace data (MOCK version)
+  const { currentUser, notes, isNotesLoading, openNoteTabs, tagSummaries, tagNames } = useWorkspaceData({
+    searchQuery: urlState.searchQuery,
+    selectedTags: urlState.selectedTags,
+    selectedAuthor: urlState.selectedAuthor,
+    selectedDate: urlState.selectedDate,
+    openNotes,
+  })
+
+  // Get all workspace actions (MOCK version)
+  const actions = useWorkspaceActions({
+    openNote,
+    closeNote,
+    selectedTags: urlState.selectedTags,
+    setSelectedTags: urlState.setSelectedTags,
+  })
+
+  // Build provider value
+  const workspaceDataValue = useMemo(() => {
+    if (!currentUser) {
+      return null
+    }
+    return {
+      currentUser,
+      notes,
+      tabs: openNoteTabs,
+      tagSummaries,
+      tagNames,
+      // Spread URL state
+      ...urlState,
+      // Spread tab actions
+      openNote,
+      closeNote,
+      // Actions
+      ...actions,
+    }
+  }, [currentUser, notes, tagSummaries, tagNames, openNoteTabs, urlState, openNote, closeNote, actions])
+
+  if (!workspaceDataValue) {
+    return null
+  }
+
+  return (
+    <WorkspaceDataProvider value={workspaceDataValue}>
+      <WorkspaceShell>
+        <div className="flex-1 min-h-0">
+          <NoteTabs />
+        </div>
+      </WorkspaceShell>
+    </WorkspaceDataProvider>
+  )
+}
+
+export default function WorkspacePage() {
+  const { isLoaded, isSignedIn } = useUser()
+
+  if (!isLoaded) return null
+  if (!isSignedIn) return <RedirectToSignIn />
+
+  return <Workspace />
 }

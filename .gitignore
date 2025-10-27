@@ -44,3 +44,6 @@ next-env.d.ts
 .idea/
 *.iml
 package-lock.json
+
+# clerk configuration (can include secrets)
+/.clerk/
