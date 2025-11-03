@@ -1,16 +1,33 @@
 import { useMemo } from "react"
-import { useUser } from "@clerk/nextjs"
-import { MOCK_NOTES, MOCK_TAGS, MOCK_CURRENT_USER } from "@/lib/mock-data"
-import type { MockNote } from "@/lib/mock-data"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import type { Id } from "@/convex/_generated/dataModel"
+import { useConvexUserReady } from "@/components/shared/providers"
 
 /**
- * Mock version of useWorkspaceData for Sprint 2
- * Returns static mock data instead of querying Convex
+ * Real version of useWorkspaceData for Sprint 3
+ * Queries Convex for notes, tags, and user data
  */
+
+// Real note type from Convex
+export interface Note {
+  id: Id<"notes">
+  title: string
+  content: string
+  tags: string[]
+  visibility: "private" | "public"
+  createdAt: number
+  updatedAt: number
+  owner: {
+    id: string
+    username: string
+  }
+  canEdit: boolean
+}
 
 export interface NoteTabEntry {
   id: string
-  note: MockNote | null
+  note: Note | null
   status: "loading" | "ready" | "error"
   error?: Error
 }
@@ -30,19 +47,26 @@ export function useWorkspaceData({
   selectedDate,
   openNotes,
 }: UseWorkspaceDataParams) {
-  // Get current user from Clerk (real authentication still works)
-  const { user, isLoaded: isUserLoaded } = useUser()
+  // Wait for Convex user to be created before querying
+  const isConvexUserReady = useConvexUserReady()
 
-  const currentUser = useMemo(() => {
-    if (!isUserLoaded) return undefined
-    if (!user) return null
-    // Return mock user for demo purposes
-    return MOCK_CURRENT_USER
-  }, [isUserLoaded, user])
+  // Query current user from Convex
+  const currentUser = useQuery(
+    api.users.current,
+    isConvexUserReady ? {} : "skip"
+  )
 
-  // Filter mock notes based on filters (client-side filtering for demo)
+  // Query all notes (owner-only for Sprint 3)
+  const allNotes = useQuery(
+    api.notes.list,
+    isConvexUserReady ? {} : "skip"
+  )
+
+  // Filter notes based on client-side filters (no tag filtering in Sprint 3)
   const filteredNotes = useMemo(() => {
-    let result = [...MOCK_NOTES]
+    if (!allNotes) return []
+
+    let result = [...allNotes]
 
     // Apply search filter
     if (searchQuery) {
@@ -54,27 +78,28 @@ export function useWorkspaceData({
       )
     }
 
-    // Apply tag filter
-    if (selectedTags.length > 0) {
-      result = result.filter((note) =>
-        selectedTags.some((tag) => note.tags.includes(tag))
-      )
-    }
-
     // Apply author filter
     if (selectedAuthor) {
       result = result.filter((note) => note.owner.id === selectedAuthor.id)
     }
 
-    // Note: Date filter not implemented in mock (Sprint 3 feature)
+    // Note: Date filter and tag filter not implemented in Sprint 3
 
     return result
-  }, [searchQuery, selectedTags, selectedAuthor])
+  }, [allNotes, searchQuery, selectedAuthor])
 
   // Create tab entries for open notes
   const openNoteTabs = useMemo(() => {
     return openNotes.map((noteId): NoteTabEntry => {
-      const note = MOCK_NOTES.find((n) => n.id === noteId)
+      if (!allNotes) {
+        return {
+          id: noteId,
+          note: null,
+          status: "loading",
+        }
+      }
+
+      const note = allNotes.find((n) => n.id === noteId)
       if (note) {
         return {
           id: noteId,
@@ -82,6 +107,7 @@ export function useWorkspaceData({
           status: "ready",
         }
       }
+
       return {
         id: noteId,
         note: null,
@@ -89,19 +115,12 @@ export function useWorkspaceData({
         error: new Error("Note not found"),
       }
     })
-  }, [openNotes])
-
-  // Tag names for autocomplete
-  const tagNames = useMemo(() => {
-    return MOCK_TAGS.map((tag) => tag.name)
-  }, [])
+  }, [openNotes, allNotes])
 
   return {
     currentUser,
     notes: filteredNotes,
-    isNotesLoading: false,
+    isNotesLoading: allNotes === undefined,
     openNoteTabs,
-    tagSummaries: MOCK_TAGS,
-    tagNames,
   }
 }

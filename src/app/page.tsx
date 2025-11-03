@@ -48,21 +48,19 @@ function Workspace() {
     [removeFromTabs, urlState, openNotes]
   )
 
-  // Fetch all workspace data (MOCK version)
-  const { currentUser, notes, isNotesLoading, openNoteTabs, tagSummaries, tagNames } = useWorkspaceData({
+  // Fetch all workspace data (real version)
+  const { currentUser, notes, isNotesLoading, openNoteTabs } = useWorkspaceData({
     searchQuery: urlState.searchQuery,
-    selectedTags: urlState.selectedTags,
+    selectedTags: [], // No tag filtering in Sprint 3
     selectedAuthor: urlState.selectedAuthor,
     selectedDate: urlState.selectedDate,
     openNotes,
   })
 
-  // Get all workspace actions (MOCK version)
+  // Get all workspace actions (real version)
   const actions = useWorkspaceActions({
     openNote,
     closeNote,
-    selectedTags: urlState.selectedTags,
-    setSelectedTags: urlState.setSelectedTags,
   })
 
   // Build provider value
@@ -74,8 +72,6 @@ function Workspace() {
       currentUser,
       notes,
       tabs: openNoteTabs,
-      tagSummaries,
-      tagNames,
       // Spread URL state
       ...urlState,
       // Spread tab actions
@@ -84,7 +80,7 @@ function Workspace() {
       // Actions
       ...actions,
     }
-  }, [currentUser, notes, tagSummaries, tagNames, openNoteTabs, urlState, openNote, closeNote, actions])
+  }, [currentUser, notes, openNoteTabs, urlState, openNote, closeNote, actions])
 
   if (!workspaceDataValue) {
     return null

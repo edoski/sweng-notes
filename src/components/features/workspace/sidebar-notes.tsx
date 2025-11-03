@@ -24,12 +24,12 @@ import {
 } from "@/components/ui/alert-dialog"
 import { SidebarGroup, useSidebar } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
-import type { MockNote } from "@/lib/mock-data"
+import type { Note } from "@/hooks/use-workspace-data"
 import { WorkspaceActionsContext } from "./workspace-shell"
 import { useWorkspaceData } from "./workspace-data-context"
 import { formatTimestamp } from "@/lib/date-format"
 
-function getVisibilityIcon(visibility: MockNote["visibility"]) {
+function getVisibilityIcon(visibility: Note["visibility"]) {
   switch (visibility) {
     case "private":
       return <Lock className="h-3 w-3" />
@@ -41,14 +41,14 @@ function getVisibilityIcon(visibility: MockNote["visibility"]) {
 }
 
 /**
- * Sprint 2 Version: Simplified SidebarNotes with mock data
- * - All actions are no-ops or placeholder messages
- * - Uses mock notes from context
+ * Sprint 3 Version: SidebarNotes with real Convex data
+ * - All actions connected to backend
+ * - Uses real notes from Convex queries
  */
 export function SidebarNotes() {
-  const { notes, currentUser, activeNoteId, openNote } = useWorkspaceData()
+  const { notes, currentUser, activeNoteId, openNote, deleteNote, duplicateNote } = useWorkspaceData()
   const workspaceActions = useContext(WorkspaceActionsContext)
-  const currentUserId = currentUser.id
+  const currentUserId = currentUser?.clerkId
   const { state: sidebarState, setOpen } = useSidebar()
   const [accordionValue, setAccordionValue] = useState<string | null>("notes")
   const [pendingDeleteNoteId, setPendingDeleteNoteId] = useState<string | null>(null)
@@ -62,8 +62,8 @@ export function SidebarNotes() {
 
   const deleteDialogTitle = pendingDeleteIsOwner ? "Delete note" : "Leave note"
   const deleteDialogDescription = pendingDeleteIsOwner
-    ? "[Sprint 2] This would delete the note in a real backend (Sprint 3)."
-    : "[Sprint 2] This would remove you from the shared note (Sprint 3)."
+    ? "This action cannot be undone. This will permanently delete the note."
+    : "This will remove you from the shared note."
   const deleteDialogActionLabel = pendingDeleteIsOwner ? "Delete" : "Leave"
 
   return (
@@ -188,9 +188,9 @@ export function SidebarNotes() {
                             Details
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onSelect={(event) => {
+                            onSelect={async (event) => {
                               event.preventDefault()
-                              console.log("[Sprint 2] Duplicate - coming in Sprint 3")
+                              await duplicateNote(note.id)
                             }}
                           >
                             <Copy className="mr-2 h-4 w-4" />
@@ -228,8 +228,10 @@ export function SidebarNotes() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                console.log("[Sprint 2] Delete/leave note - mock action")
+              onClick={async () => {
+                if (pendingDeleteNoteId) {
+                  await deleteNote(pendingDeleteNoteId)
+                }
                 setPendingDeleteNoteId(null)
               }}
             >

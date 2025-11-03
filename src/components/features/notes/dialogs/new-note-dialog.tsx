@@ -10,9 +10,9 @@ import { X, Plus } from "lucide-react"
 import { useWorkspaceData } from "@/components/features/workspace/workspace-data-context"
 
 /**
- * Sprint 2 Version: New Note Dialog
+ * Sprint 3 Version: New Note Dialog
  * - Full UI works (form, validation, tag management)
- * - Create button does nothing (backend in Sprint 3)
+ * - Create button calls real Convex mutation
  */
 
 interface NewNoteDialogProps {
@@ -21,10 +21,11 @@ interface NewNoteDialogProps {
 }
 
 export function NewNoteDialog({ open, onOpenChange }: NewNoteDialogProps) {
-  const { tagNames } = useWorkspaceData()
+  const { createNote } = useWorkspaceData()
   const [title, setTitle] = useState("")
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState("")
+  const [isCreating, setIsCreating] = useState(false)
 
   useEffect(() => {
     if (typeof window === "undefined" || open) {
@@ -52,18 +53,25 @@ export function NewNoteDialog({ open, onOpenChange }: NewNoteDialogProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Sprint 2: Just log and close, no actual creation
-    console.log("[Sprint 2] Would create note:", { title, tags })
-    console.log("[Sprint 2] Backend integration coming in Sprint 3")
+    setIsCreating(true)
+    try {
+      // Call real Convex mutation
+      await createNote({
+        title: title || "Untitled",
+        content: "",
+        tags,
+      })
 
-    // Show alert
-    alert(`[Sprint 2 Demo]\n\nNote creation UI works!\n\nTitle: "${title || "Untitled"}"\nTags: ${tags.join(", ") || "None"}\n\nBackend integration coming in Sprint 3.`)
-
-    // Reset form
-    setTitle("")
-    setTags([])
-    setNewTag("")
-    onOpenChange(false)
+      // Reset form
+      setTitle("")
+      setTags([])
+      setNewTag("")
+      onOpenChange(false)
+    } catch (error) {
+      console.error("Failed to create note:", error)
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   return (
@@ -114,23 +122,16 @@ export function NewNoteDialog({ open, onOpenChange }: NewNoteDialogProps) {
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <div className="flex flex-wrap gap-1">
-              {tagNames.map((tag) => {
-                if (tags.includes(tag)) return null
-                return (
-                  <Button key={tag} type="button" variant="outline" size="sm" className="h-6 text-xs bg-transparent" onClick={() => addTag(tag)}>
-                    #{tag}
-                  </Button>
-                )
-              })}
-            </div>
+            <p className="text-xs text-muted-foreground">Type tag names and press Enter or click + to add</p>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isCreating}>
               Cancel
             </Button>
-            <Button type="submit">Create Note</Button>
+            <Button type="submit" disabled={isCreating}>
+              {isCreating ? "Creating..." : "Create Note"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

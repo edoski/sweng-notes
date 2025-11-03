@@ -2,31 +2,33 @@
 
 import type { ReactNode } from "react"
 import { createContext, useContext } from "react"
-import type { MockNote, MockTag, MockUser } from "@/lib/mock-data"
-import type { NoteTabEntry } from "@/hooks/use-workspace-data"
+import type { Note, NoteTabEntry } from "@/hooks/use-workspace-data"
 
 /**
- * Mock version of WorkspaceDataContext for Sprint 2
- * Provides workspace data and actions to all components
+ * Simplified version of WorkspaceDataContext for Sprint 3
+ * No tag management - tags are just arrays on notes
  */
+
+// User type from Convex
+export interface User {
+  _id: string
+  clerkId: string
+  username: string
+  updatedAt: number
+  _creationTime: number
+}
 
 export interface WorkspaceDataContextValue {
   // User
-  currentUser: MockUser
+  currentUser: User | null | undefined
 
   // Notes
-  notes: MockNote[]
+  notes: Note[]
   tabs: NoteTabEntry[]
-
-  // Tags
-  tagSummaries: MockTag[]
-  tagNames: string[]
 
   // URL State
   searchQuery: string
   setSearchQuery: (query: string) => void
-  selectedTags: string[]
-  setSelectedTags: (tags: string[] | ((prev: string[]) => string[])) => void
   selectedAuthor: { id: string; username: string } | null
   setSelectedAuthor: (author: { id: string; username: string } | null) => void
   selectedDate: unknown | null
@@ -44,12 +46,6 @@ export interface WorkspaceDataContextValue {
   saveNote: (noteId: string, changes: unknown) => Promise<void>
   duplicateNote: (noteId: string) => Promise<void>
   deleteNote: (noteId: string) => Promise<void>
-
-  // Tag Actions
-  createTag: (tagName: string) => Promise<void>
-  deleteTag: (tagName: string) => Promise<void>
-  renameTag: (oldName: string, newName: string) => Promise<void>
-  toggleTag: (tag: string) => void
 
   // Dialog Actions
   openNoteDialog: (noteId: string, dialogType: string) => void

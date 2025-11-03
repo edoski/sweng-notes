@@ -5,7 +5,6 @@ import { createContext, useRef, useState } from "react"
 import { useHotkeys } from "react-hotkeys-hook"
 import { Button } from "@/components/ui/button"
 import { Search } from "lucide-react"
-import { SidebarFilters } from "./sidebar-filters"
 import { NewNoteDialog } from "@/components/features/notes/dialogs/new-note-dialog"
 import { CommandPalette } from "./command-palette"
 import { SidebarNotes } from "./sidebar-notes"
@@ -42,7 +41,7 @@ const sidebarTriggerButtonClasses =
  * - Mock data throughout
  */
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
-  const { searchQuery, selectedTags, selectedAuthor, selectedDate, clearFilters } = useWorkspaceData()
+  const { searchQuery, selectedAuthor, selectedDate, clearFilters } = useWorkspaceData()
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -63,7 +62,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const [commandOpen, setCommandOpen] = useState(false)
   const profileButtonRef = useRef<HTMLDivElement | null>(null)
   const activeFiltersCount =
-    selectedTags.length + (searchQuery ? 1 : 0) + (selectedAuthor ? 1 : 0) + (selectedDate ? 1 : 0)
+    (searchQuery ? 1 : 0) + (selectedAuthor ? 1 : 0) + (selectedDate ? 1 : 0)
 
   // Keyboard shortcuts using react-hotkeys-hook
   useHotkeys(
@@ -163,7 +162,6 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
               )}
             >
               <SidebarNotes />
-              <SidebarFilters />
             </div>
           </SidebarContent>
           <SidebarFooter
