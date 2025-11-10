@@ -1,54 +1,61 @@
 "use client"
 
-import type { ReactNode } from "react"
 import { createContext, useContext } from "react"
-import type { Note, NoteTabEntry } from "@/hooks/use-workspace-data"
+import type { ReactNode } from "react"
+import type { Note } from "@/convex/lib/note_helpers"
+import type { NoteTabEntry } from "@/components/features/notes/note-tabs"
+import type { NoteDialogType } from "@/contexts/note-dialog-context"
+import type { DateFilter } from "@/components/features/workspace/types"
+import type { AuthorSelection } from "@/hooks/use-workspace-url-state"
 
-/**
- * Simplified version of WorkspaceDataContext for Sprint 3
- * No tag management - tags are just arrays on notes
- */
+interface WorkspaceDataContextValue {
+  // User data
+  currentUser: { id: string; username: string }
 
-// User type from Convex
-export interface User {
-  _id: string
-  clerkId: string
-  username: string
-  updatedAt: number
-  _creationTime: number
-}
-
-export interface WorkspaceDataContextValue {
-  // User
-  currentUser: User | null | undefined
-
-  // Notes
-  notes: Note[]
+  // Notes data
+  notes: Note[] // Ordered and filtered notes (for display)
+  allNotes: Note[] // Unfiltered notes (for command palette)
   tabs: NoteTabEntry[]
 
-  // URL State
+  // Tags data
+  tagSummaries: { name: string; shared: boolean }[]
+  tagNames: string[]
+
+  // URL-based filter state
   searchQuery: string
-  setSearchQuery: (query: string) => void
-  selectedAuthor: { id: string; username: string } | null
-  setSelectedAuthor: (author: { id: string; username: string } | null) => void
-  selectedDate: unknown | null
-  setSelectedDate: (date: unknown | null) => void
+  selectedTags: string[]
+  selectedAuthor: AuthorSelection
+  selectedDate: DateFilter | null
   activeNoteId: string | null
+
+  // Filter state setters
+  setSearchQuery: (query: string) => void
+  setSelectedTags: (tags: string[] | ((prev: string[]) => string[])) => void
+  toggleTag: (tag: string) => void
+  setSelectedAuthor: (author: AuthorSelection) => void
+  setSelectedDate: (date: DateFilter | null) => void
   setActiveNoteId: (noteId: string | null) => void
   clearFilters: () => void
 
-  // Tab Actions
+  // Tab management
   openNote: (noteId: string) => void
   closeNote: (noteId: string) => void
 
-  // Note Actions
-  createNote: (data: { title: string; content: string; tags: string[] }) => Promise<void>
-  saveNote: (noteId: string, changes: unknown) => Promise<void>
+  // Note actions
+  createNote: (note: { title: string; content: string; tags: string[] }) => Promise<void>
+  saveNote: (
+    noteId: string,
+    changes: Partial<Pick<Note, "title" | "content" | "tags" | "visibility">>,
+    options?: { saveVersion?: boolean },
+  ) => Promise<void>
   duplicateNote: (noteId: string) => Promise<void>
   deleteNote: (noteId: string) => Promise<void>
+  openNoteDialog: (noteId: string, dialogType: NoteDialogType) => void
 
-  // Dialog Actions
-  openNoteDialog: (noteId: string, dialogType: string) => void
+  // Tag actions
+  createTag: (args: { name: string }) => Promise<{ name: string; createdAt: number; noteCount: number; shared: boolean }>
+  deleteTag: (args: { name: string }) => Promise<{ name: string }>
+  renameTag: (oldName: string, newName: string) => Promise<void>
 }
 
 const WorkspaceDataContext = createContext<WorkspaceDataContextValue | null>(null)
@@ -60,17 +67,13 @@ export function WorkspaceDataProvider({
   value: WorkspaceDataContextValue
   children: ReactNode
 }) {
-  return (
-    <WorkspaceDataContext.Provider value={value}>
-      {children}
-    </WorkspaceDataContext.Provider>
-  )
+  return <WorkspaceDataContext.Provider value={value}>{children}</WorkspaceDataContext.Provider>
 }
 
 export function useWorkspaceData() {
   const context = useContext(WorkspaceDataContext)
   if (!context) {
-    throw new Error("useWorkspaceData must be used within WorkspaceDataProvider")
+    throw new Error("useWorkspaceData must be used within a WorkspaceDataProvider")
   }
   return context
 }

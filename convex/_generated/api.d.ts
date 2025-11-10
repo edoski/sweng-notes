@@ -8,8 +8,28 @@
  * @module
  */
 
-import type * as notes from "../notes.js";
+import type * as lib_auth from "../lib/auth.js";
+import type * as lib_dates from "../lib/dates.js";
+import type * as lib_logger from "../lib/logger.js";
+import type * as lib_note_access from "../lib/note_access.js";
+import type * as lib_note_filters from "../lib/note_filters.js";
+import type * as lib_note_helpers from "../lib/note_helpers.js";
+import type * as lib_note_permissions from "../lib/note_permissions.js";
+import type * as lib_note_tags from "../lib/note_tags.js";
+import type * as lib_note_titles from "../lib/note_titles.js";
+import type * as lib_tags from "../lib/tags.js";
+import type * as lib_test_helpers from "../lib/test_helpers.js";
+import type * as lib_user_helpers from "../lib/user_helpers.js";
+import type * as lib_validation from "../lib/validation.js";
+import type * as lib_zod from "../lib/zod.js";
+import type * as liveblocks from "../liveblocks.js";
+import type * as notes_mutations from "../notes/mutations.js";
+import type * as notes_queries from "../notes/queries.js";
+import type * as permissions from "../permissions.js";
+import type * as sharing from "../sharing.js";
+import type * as tags from "../tags.js";
 import type * as users from "../users.js";
+import type * as versions from "../versions.js";
 
 import type {
   ApiFromModules,
@@ -26,8 +46,28 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  notes: typeof notes;
+  "lib/auth": typeof lib_auth;
+  "lib/dates": typeof lib_dates;
+  "lib/logger": typeof lib_logger;
+  "lib/note_access": typeof lib_note_access;
+  "lib/note_filters": typeof lib_note_filters;
+  "lib/note_helpers": typeof lib_note_helpers;
+  "lib/note_permissions": typeof lib_note_permissions;
+  "lib/note_tags": typeof lib_note_tags;
+  "lib/note_titles": typeof lib_note_titles;
+  "lib/tags": typeof lib_tags;
+  "lib/test_helpers": typeof lib_test_helpers;
+  "lib/user_helpers": typeof lib_user_helpers;
+  "lib/validation": typeof lib_validation;
+  "lib/zod": typeof lib_zod;
+  liveblocks: typeof liveblocks;
+  "notes/mutations": typeof notes_mutations;
+  "notes/queries": typeof notes_queries;
+  permissions: typeof permissions;
+  sharing: typeof sharing;
+  tags: typeof tags;
   users: typeof users;
+  versions: typeof versions;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 

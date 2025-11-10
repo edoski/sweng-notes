@@ -43,7 +43,9 @@ next-env.d.ts
 # Ignore IntelliJ / WebStorm / Rider configs
 .idea/
 *.iml
-package-lock.json
-
 # clerk configuration (can include secrets)
 /.clerk/
+
+# convex
+convex/_generated
+/ING-Progetto SWENG A.A 2024_25.pdf

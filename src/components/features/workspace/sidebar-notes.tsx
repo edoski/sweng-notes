@@ -1,6 +1,6 @@
 "use client"
 
-import { useContext, useState } from "react"
+import { useContext, useMemo, useState } from "react"
 import { Plus, Globe, Lock, MoreHorizontal, StickyNote, Share, Copy, Info, Trash2, Tag } from "lucide-react"
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
@@ -23,11 +23,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { SidebarGroup, useSidebar } from "@/components/ui/sidebar"
+import { format } from "date-fns"
+
 import { cn } from "@/lib/utils"
-import type { Note } from "@/hooks/use-workspace-data"
+import type { Note } from "@/convex/lib/note_helpers"
 import { WorkspaceActionsContext } from "./workspace-shell"
 import { useWorkspaceData } from "./workspace-data-context"
-import { formatTimestamp } from "@/lib/date-format"
 
 function getVisibilityIcon(visibility: Note["visibility"]) {
   switch (visibility) {
@@ -40,35 +41,30 @@ function getVisibilityIcon(visibility: Note["visibility"]) {
   }
 }
 
-/**
- * Sprint 3 Version: SidebarNotes with real Convex data
- * - All actions connected to backend
- * - Uses real notes from Convex queries
- */
 export function SidebarNotes() {
-  const { notes, currentUser, activeNoteId, openNote, deleteNote, duplicateNote } = useWorkspaceData()
+  const { notes, openNoteDialog, duplicateNote, deleteNote, currentUser, activeNoteId, openNote } = useWorkspaceData()
   const workspaceActions = useContext(WorkspaceActionsContext)
-  const currentUserId = currentUser?.clerkId
+  const currentUserId = currentUser.id
   const { state: sidebarState, setOpen } = useSidebar()
   const [accordionValue, setAccordionValue] = useState<string | null>("notes")
   const [pendingDeleteNoteId, setPendingDeleteNoteId] = useState<string | null>(null)
 
-  const pendingDeleteNote = pendingDeleteNoteId
-    ? notes.find((note) => note.id === pendingDeleteNoteId) ?? null
-    : null
+  const pendingDeleteNote = useMemo(() => {
+    if (!pendingDeleteNoteId) return null
+    return notes.find((note) => note.id === pendingDeleteNoteId) ?? null
+  }, [notes, pendingDeleteNoteId])
 
-  const pendingDeleteIsOwner =
-    pendingDeleteNote && currentUserId ? pendingDeleteNote.owner.id === currentUserId : false
+  const pendingDeleteIsOwner = pendingDeleteNote && currentUserId ? pendingDeleteNote.owner.id === currentUserId : false
 
   const deleteDialogTitle = pendingDeleteIsOwner ? "Delete note" : "Leave note"
   const deleteDialogDescription = pendingDeleteIsOwner
-    ? "This action cannot be undone. This will permanently delete the note."
-    : "This will remove you from the shared note."
+    ? "Are you sure you want to delete this note? This action cannot be undone."
+    : "Are you sure you want to leave this shared note? You will lose access, but the note will remain available to other collaborators."
   const deleteDialogActionLabel = pendingDeleteIsOwner ? "Delete" : "Leave"
 
   return (
     <SidebarGroup
-      className="group/notes min-h-0 overflow-hidden px-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-0"
+      className="group/notes min-h-0 overflow-hidden px-0 group-data-[collapsible=icon]:justify-start group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-0"
       style={{ maxHeight: "50%" }}
     >
       <Accordion
@@ -116,7 +112,9 @@ export function SidebarNotes() {
             style={{ flex: "1 1 0%", minHeight: 0, display: "flex", flexDirection: "column" }}
           >
             {notes.length === 0 ? (
-              <p className="text-xs text-muted-foreground px-2 py-3">No notes match your filters.</p>
+              <p className="text-xs text-muted-foreground px-2 py-3">
+                No notes match your filters.
+              </p>
             ) : (
               notes.map((note) => {
                 const isSelected = activeNoteId === note.id
@@ -127,22 +125,26 @@ export function SidebarNotes() {
                   <div
                     key={note.id}
                     className={cn(
-                      "group flex cursor-pointer items-start gap-2 rounded-md px-2 py-2 text-sm transition-colors",
+                      "group flex items-start gap-2 rounded-md px-2 py-2 text-sm transition-colors",
                       isSelected ? "bg-muted" : "hover:bg-muted/70"
                     )}
-                    onClick={() => openNote(note.id)}
                   >
                     <button
                       type="button"
-                      className="min-w-0 flex flex-1 flex-col gap-2 rounded border-0 bg-transparent p-0 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      className="min-w-0 flex flex-1 flex-col gap-2 rounded border-0 bg-transparent p-0 text-left cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      onClick={() => openNote(note.id)}
                     >
-                      <p className="truncate font-medium text-sm text-foreground">{note.title || "Untitled"}</p>
+                      <p className="truncate font-medium text-sm text-foreground">
+                        {note.title || "Untitled"}
+                      </p>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         {getVisibilityIcon(note.visibility)}
-                        <span>{currentUserId && note.owner.id === currentUserId ? "You" : note.owner.username}</span>
+                        <span>
+                          {currentUserId && note.owner.id === currentUserId ? "You" : note.owner.username}
+                        </span>
                       </div>
                     </button>
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -158,9 +160,10 @@ export function SidebarNotes() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onSelect={(event) => {
-                              event.preventDefault()
-                              console.log("[Sprint 2] Manage tags - coming in Sprint 3")
+                            disabled={!isOwner}
+                            onSelect={() => {
+                              if (!isOwner) return
+                              openNoteDialog(note.id, "tags")
                             }}
                           >
                             <Tag className="mr-2 h-4 w-4" />
@@ -168,9 +171,8 @@ export function SidebarNotes() {
                           </DropdownMenuItem>
                           {isOwner ? (
                             <DropdownMenuItem
-                              onSelect={(event) => {
-                                event.preventDefault()
-                                console.log("[Sprint 2] Share - coming in Sprint 3")
+                              onSelect={() => {
+                                openNoteDialog(note.id, "share")
                               }}
                             >
                               <Share className="mr-2 h-4 w-4" />
@@ -181,16 +183,16 @@ export function SidebarNotes() {
                           <DropdownMenuItem
                             onSelect={(event) => {
                               event.preventDefault()
-                              console.log("[Sprint 2] Details - coming in Sprint 3")
+                              openNoteDialog(note.id, "details")
                             }}
                           >
                             <Info className="mr-2 h-4 w-4" />
                             Details
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onSelect={async (event) => {
+                            onSelect={(event) => {
                               event.preventDefault()
-                              await duplicateNote(note.id)
+                              void duplicateNote(note.id)
                             }}
                           >
                             <Copy className="mr-2 h-4 w-4" />
@@ -208,7 +210,7 @@ export function SidebarNotes() {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                      <span className="text-xs text-muted-foreground">{formatTimestamp(note.updatedAt)}</span>
+                      <span className="text-xs text-muted-foreground">{format(note.updatedAt, "dd/MM/yy, HH:mm")}</span>
                     </div>
                   </div>
                 )
@@ -218,7 +220,10 @@ export function SidebarNotes() {
         </AccordionItem>
       </Accordion>
 
-      <AlertDialog open={Boolean(pendingDeleteNoteId)} onOpenChange={(open) => !open && setPendingDeleteNoteId(null)}>
+      <AlertDialog
+        open={Boolean(pendingDeleteNoteId)}
+        onOpenChange={(open) => !open && setPendingDeleteNoteId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{deleteDialogTitle}</AlertDialogTitle>
@@ -228,10 +233,9 @@ export function SidebarNotes() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={async () => {
-                if (pendingDeleteNoteId) {
-                  await deleteNote(pendingDeleteNoteId)
-                }
+              onClick={() => {
+                if (!pendingDeleteNoteId) return
+                void deleteNote(pendingDeleteNoteId)
                 setPendingDeleteNoteId(null)
               }}
             >

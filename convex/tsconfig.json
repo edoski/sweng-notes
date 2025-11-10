@@ -7,7 +7,7 @@
     /* These settings are not required by Convex and can be modified. */
     "allowJs": true,
     "strict": true,
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
@@ -21,5 +21,5 @@
     "noEmit": true
   },
   "include": ["./**/*"],
-  "exclude": ["./_generated"]
+  "exclude": ["./_generated/**/*.js", "**/*.test.ts", "lib/test_helpers.ts"]
 }

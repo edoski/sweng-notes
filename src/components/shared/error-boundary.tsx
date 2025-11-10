@@ -3,6 +3,9 @@
 import { ErrorBoundary as ReactErrorBoundary, type FallbackProps } from "react-error-boundary"
 import { Button } from "@/components/ui/button"
 import { AlertCircle } from "lucide-react"
+import { logger } from "@/convex/lib/logger"
+
+const log = logger.withModule("error-boundary")
 
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   return (
@@ -42,13 +45,13 @@ interface ErrorBoundaryProps {
 
 export function ErrorBoundary({ children, onError }: ErrorBoundaryProps) {
   const handleError = (error: Error, errorInfo: React.ErrorInfo) => {
-    // Log to console in development
-    if (process.env.NODE_ENV === "development") {
-      console.error("Error boundary caught an error:", error, errorInfo)
-    }
+    // Log the error
+    log.error("Error boundary caught an error", { error, errorInfo })
 
     // Call custom error handler if provided
     onError?.(error, errorInfo)
+
+    // Here you could also send to error tracking service (Sentry, etc.)
   }
 
   return (
@@ -56,7 +59,7 @@ export function ErrorBoundary({ children, onError }: ErrorBoundaryProps) {
       FallbackComponent={ErrorFallback}
       onError={handleError}
       onReset={() => {
-        // Reset by navigating to home
+        // Reset the state of your app so the error doesn't happen again
         window.location.href = "/"
       }}
     >

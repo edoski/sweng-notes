@@ -22,6 +22,31 @@ export function useWorkspaceUrlState() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  // Helper to build new URL with updated params
+  const buildUrl = useCallback(
+    (updates: Record<string, string | string[] | null | undefined>) => {
+      const params = new URLSearchParams(searchParams.toString())
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === undefined || value === "") {
+          params.delete(key)
+        } else if (Array.isArray(value)) {
+          if (value.length === 0) {
+            params.delete(key)
+          } else {
+            params.set(key, value.join(","))
+          }
+        } else {
+          params.set(key, value)
+        }
+      })
+
+      const queryString = params.toString()
+      return queryString ? `/?${queryString}` : "/"
+    },
+    [searchParams],
+  )
+
   // Read current state from URL
   const searchQuery = searchParams.get("search") || ""
   const selectedTags = useMemo(() => {
@@ -49,31 +74,6 @@ export function useWorkspaceUrlState() {
         }
       })()
     : null
-
-  // Helper to build new URL with updated params
-  const buildUrl = useCallback(
-    (updates: Record<string, string | string[] | null | undefined>) => {
-      const params = new URLSearchParams(searchParams.toString())
-
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value === null || value === undefined || value === "") {
-          params.delete(key)
-        } else if (Array.isArray(value)) {
-          if (value.length === 0) {
-            params.delete(key)
-          } else {
-            params.set(key, value.join(","))
-          }
-        } else {
-          params.set(key, value)
-        }
-      })
-
-      const queryString = params.toString()
-      return queryString ? `/?${queryString}` : "/"
-    },
-    [searchParams],
-  )
 
   // State setters that update URL
   const setSearchQuery = useCallback(
