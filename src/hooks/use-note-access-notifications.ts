@@ -97,7 +97,7 @@ export function useNoteAccessNotifications({
         notify({
           type: "note.roleChanged",
           level: "info",
-          message: `Your role on "${permission.noteTitle}" is now ${permission.role}.`,
+          message: `You're now a ${permission.role} on "${permission.noteTitle}".`,
         })
       }
     }

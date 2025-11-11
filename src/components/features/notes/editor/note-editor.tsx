@@ -229,20 +229,6 @@ function NoteEditorRoomContent({
     }
   }, [editor, note.canEdit, previousCanEdit, isActive, liveblocksClient])
 
-  // Notify collaborator when their permission changes
-  useEffect(() => {
-    if (isOwner || !currentUser) return
-    if (previousCanEdit === undefined || previousCanEdit === note.canEdit) return
-
-    const role = note.canEdit ? "editor" : "reader"
-
-    notify({
-      type: "note.roleChanged",
-      level: "info",
-      message: `You're now a ${role} on "${note.title}".`,
-    })
-  }, [isOwner, currentUser, previousCanEdit, note.canEdit, note.title])
-
   useEffect(() => {
     if (isOwner) return
 
