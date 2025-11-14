@@ -7,6 +7,7 @@ import { setupUser, createNote, grantPermission, mockIdentity } from "./lib/test
 describe("notes mutation functions", () => {
   describe("create", () => {
     it("should create note with title and content", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "testuser")
@@ -32,6 +33,7 @@ describe("notes mutation functions", () => {
     })
 
     it("should create note with tags", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "testuser")
@@ -53,6 +55,7 @@ describe("notes mutation functions", () => {
     })
 
     it("should create initial version", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "testuser")
@@ -80,6 +83,7 @@ describe("notes mutation functions", () => {
 
   describe("update", () => {
     it("should update title", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "testuser")
@@ -95,6 +99,7 @@ describe("notes mutation functions", () => {
     })
 
     it("should throw error if editor tries to update tags", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       const editorIdentity = mockIdentity("editor-456", "editor")
@@ -114,6 +119,7 @@ describe("notes mutation functions", () => {
     })
 
     it("should revoke collaborators when downgrading to private", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       const collaboratorIdentity = mockIdentity("collab-456", "collab")
@@ -141,6 +147,7 @@ describe("notes mutation functions", () => {
     })
 
     it("should throw error if reader tries to update", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       const readerIdentity = mockIdentity("reader-456", "reader")
@@ -162,6 +169,7 @@ describe("notes mutation functions", () => {
 
   describe("remove", () => {
     it("should allow owner to delete note", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "testuser")

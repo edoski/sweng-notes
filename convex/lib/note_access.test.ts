@@ -8,6 +8,7 @@ import type { Doc, Id } from "../_generated/dataModel"
 describe("note_access permission resolution", () => {
   describe("resolvePermission", () => {
     it("should return 'owner' for note owner", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "owner")
@@ -23,6 +24,7 @@ describe("note_access permission resolution", () => {
     })
 
     it("should return null for non-owner of private note", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       const ownerId = await setupUser(t, ownerIdentity, "owner")
@@ -41,6 +43,7 @@ describe("note_access permission resolution", () => {
     })
 
     it("should return null for public note with no permission entry", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       await setupUser(t, ownerIdentity, "owner")
@@ -59,6 +62,7 @@ describe("note_access permission resolution", () => {
     })
 
     it("should return 'reader' for public note with reader permission", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       await setupUser(t, ownerIdentity, "owner")
@@ -78,6 +82,7 @@ describe("note_access permission resolution", () => {
     })
 
     it("should return 'editor' for public note with editor permission", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       await setupUser(t, ownerIdentity, "owner")
@@ -97,6 +102,7 @@ describe("note_access permission resolution", () => {
     })
 
     it("should return 'owner' for owner regardless of visibility", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "owner")
@@ -113,6 +119,7 @@ describe("note_access permission resolution", () => {
 
     it("should return 'owner' even if notePermissions entry exists", async () => {
       // Arrange
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const owner = mockIdentity("owner-123", "owner")
       await setupUser(t, owner, "owner")
@@ -139,6 +146,7 @@ describe("note_access permission resolution", () => {
 
   describe("fetchNoteAccess", () => {
     it("should return not_found for non-existent note", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "user")
@@ -155,6 +163,7 @@ describe("note_access permission resolution", () => {
     })
 
     it("should return ok for owner accessing own note", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "owner")
@@ -173,6 +182,7 @@ describe("note_access permission resolution", () => {
     })
 
     it("should return unauthorized for non-owner accessing private note", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       await setupUser(t, ownerIdentity, "owner")
@@ -190,6 +200,7 @@ describe("note_access permission resolution", () => {
     })
 
     it("should return unauthorized for public note with no permission", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       await setupUser(t, ownerIdentity, "owner")
@@ -207,6 +218,7 @@ describe("note_access permission resolution", () => {
     })
 
     it("should return ok for reader accessing public note", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       await setupUser(t, ownerIdentity, "owner")
@@ -229,6 +241,7 @@ describe("note_access permission resolution", () => {
     })
 
     it("should return ok for editor accessing public note", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       await setupUser(t, ownerIdentity, "owner")

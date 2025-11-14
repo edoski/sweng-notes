@@ -7,6 +7,7 @@ import { setupUser, createNote, grantPermission, mockIdentity } from "./lib/test
 describe("permissions query functions", () => {
   describe("myPermissions", () => {
     it("should return empty array for user with no permissions", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "user")
@@ -17,6 +18,7 @@ describe("permissions query functions", () => {
     })
 
     it("should return permission with note and owner details", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
 
       // Owner creates note
@@ -43,6 +45,7 @@ describe("permissions query functions", () => {
     })
 
     it("should return multiple permissions with different roles", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
 
       const ownerIdentity = mockIdentity("owner-123", "owner")
@@ -72,6 +75,7 @@ describe("permissions query functions", () => {
     })
 
     it("should return null for noteTitle when note is deleted", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
 
       const ownerIdentity = mockIdentity("owner-123", "owner")
@@ -97,6 +101,7 @@ describe("permissions query functions", () => {
     })
 
     it("should return null for ownerUsername when owner is deleted", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
 
       const ownerIdentity = mockIdentity("owner-123", "owner")
@@ -122,6 +127,7 @@ describe("permissions query functions", () => {
     })
 
     it("should return complete data with all fields", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
 
       const ownerIdentity = mockIdentity("owner-123", "owner")

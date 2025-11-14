@@ -58,6 +58,20 @@ export function WorkspaceShell({ children, }: { children: React.ReactNode }) {
     router.push(query ? `/?${query}` : "/")
   }
 
+  // New tag dialog state from URL
+  const newTagOpen = searchParams.get("action") === "new-tag"
+  const openNewTagDialog = () => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("action", "new-tag")
+    router.push(`/?${params.toString()}`)
+  }
+  const closeNewTagDialog = () => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("action")
+    const query = params.toString()
+    router.push(query ? `/?${query}` : "/")
+  }
+
   const [commandOpen, setCommandOpen] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const { deleteAccount, isDeleting } = useDeleteAccount()
@@ -144,7 +158,11 @@ export function WorkspaceShell({ children, }: { children: React.ReactNode }) {
               sidebarIconModeVariants({ iconModeAlign: "auto" })
             )}>
               <SidebarNotes />
-              <SidebarFilters />
+              <SidebarFilters
+                newTagOpen={newTagOpen}
+                openNewTagDialog={openNewTagDialog}
+                closeNewTagDialog={closeNewTagDialog}
+              />
             </div>
           </SidebarContent>
           <SidebarFooter className={cn(

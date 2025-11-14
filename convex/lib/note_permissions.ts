@@ -13,8 +13,7 @@ export interface NoteAccessEntry {
 
 /**
  * Loads all notes accessible to the user with their permissions.
- * Returns a map for O(1) lookups, avoiding repeated permission queries
- * and eliminating double-fetching of note documents.
+ * Returns a map for O(1) lookups, avoiding repeated permission queries.
  */
 export async function loadAccessibleNotes(
   ctx: AnyCtx,

@@ -156,7 +156,7 @@ export function useCommandPaletteSearch(query: string) {
       ? tagResults
       : authorOnly
         ? authorResults
-        : [...dateResults, ...noteResults, ...authorResults, ...tagResults]
+        : [...noteResults, ...dateResults, ...authorResults, ...tagResults]
 
     // Sort notes by updatedAt if no search term
     if (!searchTerm && !tagOnly && !authorOnly) {

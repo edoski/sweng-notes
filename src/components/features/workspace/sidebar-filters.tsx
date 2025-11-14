@@ -31,10 +31,15 @@ import {
   MAX_TAG_NAME_LENGTH as TAG_NAME_MAX_LENGTH,
 } from "@/convex/lib/validation"
 
-export function SidebarFilters() {
+interface SidebarFiltersProps {
+  newTagOpen: boolean
+  openNewTagDialog: () => void
+  closeNewTagDialog: () => void
+}
+
+export function SidebarFilters({ newTagOpen, openNewTagDialog, closeNewTagDialog }: SidebarFiltersProps) {
   const { tagSummaries, createTag, deleteTag, renameTag, selectedTags, toggleTag } = useWorkspaceData()
   const { state: sidebarState, setOpen } = useSidebar()
-  const [isCreateTagOpen, setIsCreateTagOpen] = useState(false)
   const [newTagName, setNewTagName] = useState("")
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [editingTag, setEditingTag] = useState<string | null>(null)
@@ -50,7 +55,7 @@ export function SidebarFilters() {
     }
     await createTag({ name: newTagName })
     setNewTagName("")
-    setIsCreateTagOpen(false)
+    closeNewTagDialog()
   }
 
   const handleRenameTag = (tag: string) => {
@@ -109,7 +114,7 @@ export function SidebarFilters() {
                 event.preventDefault()
                 event.stopPropagation()
                 setNewTagName("")
-                setIsCreateTagOpen(true)
+                openNewTagDialog()
               }}
             >
               <Plus className="h-4 w-4" />
@@ -223,9 +228,13 @@ export function SidebarFilters() {
       </Accordion>
 
       <Dialog
-        open={isCreateTagOpen}
+        open={newTagOpen}
         onOpenChange={(open) => {
-          setIsCreateTagOpen(open)
+          if (open) {
+            openNewTagDialog()
+          } else {
+            closeNewTagDialog()
+          }
           if (!open) {
             setNewTagName("")
           }
@@ -233,7 +242,7 @@ export function SidebarFilters() {
       >
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Create tag</DialogTitle>
+            <DialogTitle>New Tag</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateTag} className="space-y-4">
             <div className="space-y-2">
@@ -248,7 +257,7 @@ export function SidebarFilters() {
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsCreateTagOpen(false)}>
+              <Button type="button" variant="outline" onClick={closeNewTagDialog}>
                 Cancel
               </Button>
               <Button type="submit" disabled={!newTagName.trim()}>

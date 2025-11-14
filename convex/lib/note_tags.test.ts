@@ -6,6 +6,7 @@ import { setupUser, createNote, createTag, linkNoteTag, mockIdentity } from "./t
 describe("note_tags junction table helpers", () => {
   describe("getNoteTags", () => {
     it("should handle orphaned noteTag references gracefully", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "testuser")
@@ -44,6 +45,7 @@ describe("note_tags junction table helpers", () => {
 
   describe("batchGetNoteTags", () => {
     it("should return empty arrays for notes with no tags", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "testuser")
@@ -67,6 +69,7 @@ describe("note_tags junction table helpers", () => {
 
   describe("setNoteTags", () => {
     it("should handle empty tags array", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "testuser")
@@ -100,6 +103,7 @@ describe("note_tags junction table helpers", () => {
     })
 
     it("should replace all tags atomically", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "testuser")
@@ -143,6 +147,7 @@ describe("note_tags junction table helpers", () => {
     })
 
     it("should deduplicate tags when setting", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "testuser")
@@ -176,6 +181,7 @@ describe("note_tags junction table helpers", () => {
 
   describe("deleteAllNoteTags", () => {
     it("should delete all noteTags entries for a note", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "testuser")

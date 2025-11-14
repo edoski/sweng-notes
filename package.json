@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "run-p dev:convex dev:next",
+    "dev": "run-p dev:*",
     "dev:convex": "convex dev",
     "dev:next": "next dev --turbopack",
-    "vercel-build": "convex codegen && convex deploy -y && next build",
-    "lint": "eslint . && exec tsc --noEmit",
+    "lint": "run-s --continue-on-error lint:*",
+    "lint:eslint": "eslint .",
+    "lint:tsc": "exec tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
@@ -70,7 +71,7 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitest/coverage-v8": "^4.0.7",
-    "convex": "^1.28.2",
+    "convex": "^1.29.1",
     "convex-test": "^0.0.38",
     "eslint": "^9.38.0",
     "eslint-config-next": "15.4.5",

@@ -6,6 +6,7 @@ import { setupUser, createNote, grantPermission, createTag, linkNoteTag, mockIde
 describe("note_permissions query and management", () => {
   describe("loadAccessibleNotes", () => {
     it("should return only owned notes when user has no shared access", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "owner")
@@ -26,6 +27,7 @@ describe("note_permissions query and management", () => {
     })
 
     it("should return owned and shared notes with correct permissions", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
 
       const userIdentity = mockIdentity("user-123", "user")
@@ -53,6 +55,7 @@ describe("note_permissions query and management", () => {
 
   describe("revokeAllCollaborators", () => {
     it("should delete all permissions for note", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
 
       const ownerIdentity = mockIdentity("owner-123", "owner")
@@ -80,6 +83,7 @@ describe("note_permissions query and management", () => {
     })
 
     it("should prune shared tags when revoking collaborators", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("../**/*.{js,ts}"))
 
       const ownerIdentity = mockIdentity("owner-123", "owner")

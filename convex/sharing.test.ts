@@ -8,6 +8,7 @@ import { setupUser, createNote, grantPermission, mockIdentity } from "./lib/test
 describe("sharing collaboration functions", () => {
   describe("listCollaborators", () => {
     it("should return null when user has no access", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       const otherIdentity = mockIdentity("other-456", "other")
@@ -22,6 +23,7 @@ describe("sharing collaboration functions", () => {
     })
 
     it("should return correct structure for owner with canManage: true", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       const ownerId = await setupUser(t, ownerIdentity, "owner")
@@ -40,6 +42,7 @@ describe("sharing collaboration functions", () => {
     })
 
     it("should return correct structure for reader with canManage: false", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       const readerIdentity = mockIdentity("reader-456", "reader")
@@ -67,6 +70,7 @@ describe("sharing collaboration functions", () => {
 
   describe("grantAccess", () => {
     it("should throw error for non-owner", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       const readerIdentity = mockIdentity("reader-456", "reader")
@@ -87,6 +91,7 @@ describe("sharing collaboration functions", () => {
     })
 
     it("should throw error if note is private", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       await setupUser(t, ownerIdentity, "owner")
@@ -104,6 +109,7 @@ describe("sharing collaboration functions", () => {
     })
 
     it("should create new permission entry", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       await setupUser(t, ownerIdentity, "owner")
@@ -138,6 +144,7 @@ describe("sharing collaboration functions", () => {
 
   describe("revokeAccess", () => {
     it("should delete permission entry", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       await setupUser(t, ownerIdentity, "owner")
@@ -165,6 +172,7 @@ describe("sharing collaboration functions", () => {
     })
 
     it("should throw error if trying to revoke owner", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       const ownerId = await setupUser(t, ownerIdentity, "owner")

@@ -16,6 +16,7 @@ import { getNoteTags } from "./lib/note_tags"
 describe("tags CRUD functions", () => {
   describe("list", () => {
     it("should return empty array for user with no tags", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "user")
@@ -26,6 +27,7 @@ describe("tags CRUD functions", () => {
     })
 
     it("should return tags with correct note counts", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "user")
@@ -54,6 +56,7 @@ describe("tags CRUD functions", () => {
 
   describe("create", () => {
     it("should create new tag successfully", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "user")
@@ -71,6 +74,7 @@ describe("tags CRUD functions", () => {
 
   describe("rename", () => {
     it("should throw error if tag not found", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "user")
@@ -91,6 +95,7 @@ describe("tags CRUD functions", () => {
     })
 
     it("should throw error if toName already exists", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "user")
@@ -114,6 +119,7 @@ describe("tags CRUD functions", () => {
     })
 
     it("should successfully rename tag (O(1) operation)", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "user")
@@ -140,6 +146,7 @@ describe("tags CRUD functions", () => {
     })
 
     it("should verify rename updates tags table only (O(1) proof)", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "user")
@@ -196,6 +203,7 @@ describe("tags CRUD functions", () => {
 
   describe("remove", () => {
     it("should delete tag completely when not used in shared notes", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "user")
@@ -212,6 +220,7 @@ describe("tags CRUD functions", () => {
     })
 
     it("should convert to shared tag when removing tag used in collaborative note", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
 
       // Owner creates note with tag

@@ -12,6 +12,7 @@ import {
 describe("users management functions", () => {
   describe("ensure", () => {
     it("should throw error if no identity", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
 
       await expect(t.mutation(api.users.ensure, {})).rejects.toThrow(ConvexError)
@@ -22,6 +23,7 @@ describe("users management functions", () => {
     })
 
     it("should return existing user if already exists", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "johndoe")
       await setupUser(t, identity, "johndoe")
@@ -33,6 +35,7 @@ describe("users management functions", () => {
     })
 
     it("should create new user with derived username", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user|abc123def456", "newuser")
 
@@ -45,6 +48,7 @@ describe("users management functions", () => {
 
   describe("getByClerkId", () => {
     it("should return null for non-existent clerkId", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
 
       const result = await t.query(api.users.getByClerkId, { clerkId: "nonexistent" })
@@ -53,6 +57,7 @@ describe("users management functions", () => {
     })
 
     it("should return user data for existing clerkId", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("clerk-123", "testuser")
       const userId = await setupUser(t, identity, "testuser")
@@ -68,6 +73,7 @@ describe("users management functions", () => {
 
   describe("deleteAccount (cascade deletion)", () => {
     it("should delete owned notes", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "user")

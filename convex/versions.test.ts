@@ -13,6 +13,7 @@ import {
 describe("versions management functions", () => {
   describe("list", () => {
     it("should throw error for non-owner", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
 
       const ownerIdentity = mockIdentity("owner-123", "owner")
@@ -29,6 +30,7 @@ describe("versions management functions", () => {
     })
 
     it("should return empty array for note with no versions", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "user")
@@ -40,6 +42,7 @@ describe("versions management functions", () => {
     })
 
     it("should return versions sorted by creation time (oldest first)", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "user")
@@ -64,6 +67,7 @@ describe("versions management functions", () => {
 
   describe("restore", () => {
     it("should throw error if version not found", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "user")
@@ -84,6 +88,7 @@ describe("versions management functions", () => {
     })
 
     it("should restore note to previous version", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "user")

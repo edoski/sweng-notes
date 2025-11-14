@@ -8,6 +8,7 @@ import { setupUser, createNote, grantPermission, createTag, linkNoteTag, mockIde
 describe("notes query functions", () => {
   describe("list", () => {
     it("should return all accessible notes for authenticated user", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "testuser")
@@ -22,6 +23,7 @@ describe("notes query functions", () => {
     })
 
     it("should filter by tags", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       const userId = await setupUser(t, identity, "testuser")
@@ -47,6 +49,7 @@ describe("notes query functions", () => {
     })
 
     it("should include shared notes in results", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       const readerIdentity = mockIdentity("reader-456", "reader")
@@ -66,6 +69,7 @@ describe("notes query functions", () => {
     })
 
     it("should throw error if not authenticated", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
 
       await expect(
@@ -76,6 +80,7 @@ describe("notes query functions", () => {
 
   describe("get", () => {
     it("should return note for owner", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "testuser")
@@ -93,6 +98,7 @@ describe("notes query functions", () => {
     })
 
     it("should return null for unauthorized access", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       const otherIdentity = mockIdentity("other-456", "other")
@@ -110,6 +116,7 @@ describe("notes query functions", () => {
 
   describe("getMentionSuggestions", () => {
     it("should return collaborators for public notes", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const ownerIdentity = mockIdentity("owner-123", "owner")
       const user1Identity = mockIdentity("user1-456", "user1")
@@ -135,6 +142,7 @@ describe("notes query functions", () => {
     })
 
     it("should return empty array for private notes", async () => {
+      // @ts-expect-error glob
       const t = convexTest(schema, import.meta.glob("./**/*.{js,ts}"))
       const identity = mockIdentity("user-123", "user")
       await setupUser(t, identity, "testuser")
