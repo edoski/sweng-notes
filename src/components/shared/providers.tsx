@@ -1,7 +1,7 @@
 "use client"
 
 import type {ReactNode} from "react"
-import {createContext, useCallback, useContext, useEffect, useRef, useState} from "react"
+import {createContext, useCallback, useContext, useEffect, useState} from "react"
 import {ConvexProviderWithClerk} from "convex/react-clerk"
 import {ConvexReactClient, useMutation} from "convex/react"
 import {useAuth, useUser} from "@clerk/nextjs"
@@ -15,11 +15,11 @@ import {buildLiveblocksUserInfo} from "@/lib/liveblocks-user-info"
 import {ErrorBoundary} from "./error-boundary"
 import {logger} from "@/convex/lib/logger"
 import {usePrevious} from "@/hooks/use-previous"
+import {STORAGE_KEY} from "@/hooks/use-persisted-tabs"
 
 const log = logger.withModule("providers")
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
-const liveblocksAuthEndpoint = process.env.NEXT_PUBLIC_LIVEBLOCKS_AUTH_ENDPOINT ?? "/api/liveblocks-auth"
 
 type LiveblocksUserInfo = Liveblocks["UserMeta"]["info"]
 
@@ -50,37 +50,21 @@ export function AppProviders({ children }: { children: ReactNode }) {
     return new ConvexReactClient(convexUrl)
   })
 
-  // Move cache to component state to prevent memory leaks
-  const liveblocksUsersCacheRef = useRef(new Map<string, LiveblocksUserInfo>())
-
   // Inline resolver that calls Convex directly (Liveblocks automatically batches these)
   const resolveUsers = useCallback(
     async ({ userIds }: { userIds: string[] }): Promise<LiveblocksUserInfo[]> => {
-      const cache = liveblocksUsersCacheRef.current
-      const pendingUserIds = userIds.filter((userId) => !cache.has(userId))
+      if (userIds.length === 0) return []
 
-      if (pendingUserIds.length > 0) {
-        try {
-          const profiles = await convexClient.query(api.users.resolveProfiles, { clerkIds: pendingUserIds })
-          for (const profile of profiles) {
-            const userInfo = buildLiveblocksUserInfo(profile.clerkId, profile.username)
-            cache.set(profile.clerkId, userInfo)
-          }
-        } catch (error) {
-          log.error("Failed to resolve users from Convex", { error })
-        }
-      }
-
-      return userIds.map((userId) => {
-        const cached = cache.get(userId)
-        if (cached) {
-          return cached
-        }
+      try {
+        const profiles = await convexClient.query(api.users.resolveProfiles, { clerkIds: userIds })
+        return profiles.map(profile => buildLiveblocksUserInfo(profile.clerkId, profile.username))
+      } catch (error) {
+        log.error("Failed to resolve users from Convex", { error })
         // Fallback: use userId as name
-        return buildLiveblocksUserInfo(userId, userId)
-      })
+        return userIds.map(userId => buildLiveblocksUserInfo(userId, userId))
+      }
     },
-    [convexClient],
+    [convexClient]
   )
 
   // Inline resolver for mention suggestions (calls Convex directly)
@@ -97,11 +81,6 @@ export function AppProviders({ children }: { children: ReactNode }) {
               text,
             })
 
-            // Pre-populate cache for these users
-            if (clerkIds.length > 0) {
-              await resolveUsers({ userIds: clerkIds })
-            }
-
             resolve(clerkIds)
           } catch (error) {
             log.error("Failed to resolve mention suggestions from Convex", { error })
@@ -110,14 +89,14 @@ export function AppProviders({ children }: { children: ReactNode }) {
         })
       })
     },
-    [convexClient, resolveUsers],
+    [convexClient]
   )
 
   return (
     <ErrorBoundary>
       <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
         <LiveblocksProvider
-          authEndpoint={liveblocksAuthEndpoint}
+          authEndpoint={"/api/liveblocks-auth"}
           resolveUsers={resolveUsers}
           resolveMentionSuggestions={resolveMentionSuggestions}
         >
@@ -223,6 +202,11 @@ function AuthToastWatcher() {
     }
 
     if (previousIsSignedIn && !isSignedIn) {
+      // Clear open note tabs from session storage
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(STORAGE_KEY)
+      }
+
       notify({
         type: "auth.signedOut",
         level: "info",

@@ -141,7 +141,7 @@ export function useNoteAutosave({
       if (!canEdit) return
       if (characters > NOTE_CONTENT_MAX_LENGTH) return
 
-      const markdown = editor.storage.markdown.getMarkdown()
+      const markdown = editor.getMarkdown()
       if (markdown === lastSavedContentRef.current) return
 
       // Accumulate content change

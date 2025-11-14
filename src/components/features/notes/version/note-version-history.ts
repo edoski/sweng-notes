@@ -73,15 +73,17 @@ export function useNoteVersionHistory({
   const handleRestoreVersion = useCallback(
     async (version: VersionHistoryItem) => {
       setRestoringVersionId(version.id)
-      const restoredTitle = version.title || "Untitled"
       try {
         await restoreVersionMutation({ noteId, versionId: version.id as Id<"noteVersions"> })
         closeVersionHistory()
-        replaceTitle(restoredTitle)
+
+        // Update editor content manually (Liveblocks manages this separately)
         if (editor) {
-          editor.commands.setContent(version.snapshot, true)
+          editor.commands.setContent(version.snapshot, { contentType: 'markdown' })
         }
-        const displayTitle = restoredTitle.trim() || "Untitled"
+
+        // Title will update reactively via Convex useQuery
+        const displayTitle = (version.title || "Untitled").trim() || "Untitled"
         notify({
           type: "note.versionRestored",
           level: "success",
@@ -93,13 +95,7 @@ export function useNoteVersionHistory({
         setRestoringVersionId(null)
       }
     },
-    [
-      noteId,
-      closeVersionHistory,
-      editor,
-      replaceTitle,
-      restoreVersionMutation,
-    ],
+    [noteId, closeVersionHistory, editor, restoreVersionMutation],
   )
 
   return {

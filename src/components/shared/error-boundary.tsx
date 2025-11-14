@@ -4,6 +4,8 @@ import { ErrorBoundary as ReactErrorBoundary, type FallbackProps } from "react-e
 import { Button } from "@/components/ui/button"
 import { AlertCircle } from "lucide-react"
 import { logger } from "@/convex/lib/logger"
+import { isSessionExpiredError } from "@/lib/session-errors"
+import { STORAGE_KEY } from "@/hooks/use-persisted-tabs"
 
 const log = logger.withModule("error-boundary")
 
@@ -45,6 +47,16 @@ interface ErrorBoundaryProps {
 
 export function ErrorBoundary({ children, onError }: ErrorBoundaryProps) {
   const handleError = (error: Error, errorInfo: React.ErrorInfo) => {
+    // Check for session expiry and redirect to login
+    if (isSessionExpiredError(error)) {
+      // Clear open note tabs before redirecting to login
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(STORAGE_KEY)
+      }
+      window.location.href = '/login'
+      return
+    }
+
     // Log the error
     log.error("Error boundary caught an error", { error, errorInfo })
 

@@ -1,7 +1,7 @@
 import { ConvexError } from "convex/values"
 import type { Id } from "./_generated/dataModel"
 import { TagNameSchema } from "./lib/validation"
-import { ensureTags } from "./lib/tags"
+import { ensureTags, pruneTag } from "./lib/tags"
 import { getNoteTags } from "./lib/note_tags"
 import { authedMutation, authedQuery } from "./lib/zod"
 
@@ -104,6 +104,48 @@ export const rename = authedMutation({
     // This is O(1) thanks to the normalized schema (foreign key tagId instead of embedded strings)
     await ctx.db.patch(tag._id, { name: toName })
 
+    // Sync rename to collaborators with shared tags from affected notes
+    const noteTagEntries = await ctx.db
+      .query("noteTags")
+      .withIndex("by_tag_note_id", (q) => q.eq("tagId", tag._id))
+      .collect()
+
+    for (const noteTagEntry of noteTagEntries) {
+      const note = await ctx.db.get(noteTagEntry.noteId)
+      if (!note) continue
+
+      const permissions = await ctx.db
+        .query("notePermissions")
+        .withIndex("by_note", (q) => q.eq("noteId", note._id))
+        .collect()
+
+      for (const perm of permissions) {
+        // Skip owner
+        if (perm.userId === user._id) continue
+
+        // Find collaborator's shared tag
+        const collabTag = await ctx.db
+          .query("tags")
+          .withIndex("by_owner_name", (q) => q.eq("ownerId", perm.userId).eq("name", fromName))
+          .unique()
+
+        // Skip if tag not found or not shared from this note
+        if (!collabTag || collabTag.sharedFromNoteId !== note._id) continue
+
+        // Check for naming conflict
+        const conflict = await ctx.db
+          .query("tags")
+          .withIndex("by_owner_name", (q) => q.eq("ownerId", perm.userId).eq("name", toName))
+          .unique()
+
+        // Skip if naming conflict exists
+        if (conflict) continue
+
+        // Update collaborator's tag
+        await ctx.db.patch(collabTag._id, { name: toName })
+      }
+    }
+
     return { name: toName }
   },
 })
@@ -162,6 +204,25 @@ export const remove = authedMutation({
     } else {
       // No shared notes use this tag, safe to delete
       await ctx.db.delete(tag._id)
+    }
+
+    // Sync deletion to collaborators - clean up their shared tags
+    for (const noteTagEntry of noteTagEntries) {
+      const note = await ctx.db.get(noteTagEntry.noteId)
+      if (!note) continue
+
+      const permissions = await ctx.db
+        .query("notePermissions")
+        .withIndex("by_note", (q) => q.eq("noteId", note._id))
+        .collect()
+
+      for (const perm of permissions) {
+        // Skip owner
+        if (perm.userId === user._id) continue
+
+        // Prune collaborator's shared tag (automatically checks if still in use)
+        await pruneTag(ctx, perm.userId, name)
+      }
     }
 
     return { name }

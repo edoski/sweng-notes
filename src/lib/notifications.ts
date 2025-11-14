@@ -1,5 +1,6 @@
 import { ConvexError } from "convex/values"
 import { toast } from "sonner"
+import { isSessionExpiredError } from "./session-errors"
 
 /**
  * Extracts a user-friendly error message from various error types.
@@ -107,6 +108,12 @@ export type NotificationEvent =
 export function notify(event: NotificationEvent): void
 export function notify(error: unknown, fallback: string): void
 export function notify(eventOrError: NotificationEvent | unknown, fallback?: string): void {
+  // Detect session expiry and redirect to login
+  if (!isNotificationEvent(eventOrError) && isSessionExpiredError(eventOrError)) {
+    window.location.href = "/login"
+    return
+  }
+
   if (isNotificationEvent(eventOrError)) {
     toast[eventOrError.level](eventOrError.message)
   } else {

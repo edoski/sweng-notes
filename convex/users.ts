@@ -3,8 +3,9 @@ import type { Id } from "./_generated/dataModel"
 import { z } from "zod/v3"
 import { zid } from "convex-helpers/server/zod"
 import { authedQuery, authedMutation, zMutation, zQuery } from "./lib/zod"
-import { deleteAllNoteTags } from "./lib/note_tags"
+import { deleteAllNoteTags, getNoteTags } from "./lib/note_tags"
 import { revokeAllCollaborators } from "./lib/note_permissions"
+import { pruneTag } from "./lib/tags"
 import { internal } from "./_generated/api"
 
 const ClerkIdListSchema = z
@@ -73,7 +74,6 @@ export const ensure = zMutation({
     const userId = await ctx.db.insert("users", {
       clerkId: identity.subject,
       username,
-      updatedAt: Date.now(),
     })
 
     const created = await ctx.db.get(userId)
@@ -189,11 +189,14 @@ export const deleteAccount = authedMutation({
         .collect()
       await Promise.all(versions.map((v) => ctx.db.delete(v._id)))
 
+      // Fetch tags BEFORE deleting junction table entries
+      const noteTags = await getNoteTags(ctx, note._id)
+
       // Delete note tags
       await deleteAllNoteTags(ctx, note._id)
 
-      // Revoke all collaborators (deletes permissions and prunes their shared tags)
-      await revokeAllCollaborators(ctx, note._id)
+      // Revoke all collaborators (pass tags explicitly to avoid re-fetching)
+      await revokeAllCollaborators(ctx, note._id, { noteTags })
 
       // Schedule Liveblocks room deletion
       await ctx.scheduler.runAfter(0, internal.liveblocks.deleteRoom, {
@@ -209,6 +212,18 @@ export const deleteAccount = authedMutation({
       .query("notePermissions")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect()
+
+    // Clean up shared tags for each collaborative note
+    await Promise.all(
+      collaboratorPermissions.map(async (perm) => {
+        const note = await ctx.db.get(perm.noteId)
+        if (note) {
+          const noteTags = await getNoteTags(ctx, note._id)
+          await Promise.all(noteTags.map((tag) => pruneTag(ctx, user._id, tag)))
+        }
+      })
+    )
+
     await Promise.all(collaboratorPermissions.map((p) => ctx.db.delete(p._id)))
 
     // 3. Delete all user's tags (both owned and shared)

@@ -13,7 +13,7 @@ import type { Note, NoteVisibility } from "@/convex/lib/note_helpers"
 import { CharacterCount } from "@tiptap/extension-character-count"
 import {MAX_NOTE_CONTENT_LENGTH} from "@/convex/lib/validation"
 
-import { Markdown } from "tiptap-markdown"
+import { Markdown } from "@tiptap/markdown"
 import { useNoteAutosave } from "@/components/features/notes/hooks/note-editor-hooks"
 import { useNoteSharing } from "@/components/features/notes/hooks/note-sharing"
 import { useNotePresence } from "@/components/features/notes/hooks/note-presence"
@@ -148,25 +148,20 @@ function NoteEditorRoomContent({
     {
       immediatelyRender: false,
       extensions: [
-        // TipTap version constraint: Liveblocks requires @tiptap/core@2.7.4
-        // while other extensions use ^2.26.4. This works correctly at runtime.
-        // See: https://liveblocks.io/docs/api-reference/liveblocks-tiptap
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        StarterKit.configure({ history: false }) as any,
+        // TipTap version: Liveblocks 3.10+ requires TipTap 3.x
+        // Using official @tiptap/markdown extension (replaced community tiptap-markdown)
+        // See: https://liveblocks.io/docs/guides/migrating-from-tiptap-2-to-3
+        StarterKit.configure({ undoRedo: false }),
         liveblocksExtension,
         CharacterCount.configure({
           limit: MAX_NOTE_CONTENT_LENGTH,
           mode: "textSize",
         }),
         Markdown.configure({
-          html: false,
-          tightLists: true,
-          tightListClass: "tight",
-          bulletListMarker: "*",
-          linkify: true,
-          breaks: true,
-          transformPastedText: true,
-          transformCopiedText: true,
+          markedOptions: {
+            gfm: true,     // GitHub Flavored Markdown (includes linkify)
+            breaks: true,  // Convert \n to <br>
+          },
         }),
       ],
       autofocus: false,
@@ -250,7 +245,7 @@ function NoteEditorRoomContent({
       if (characters > MAX_NOTE_CONTENT_LENGTH) {
         return
       }
-      const markdown = editor.storage.markdown.getMarkdown()
+      const markdown = editor.getMarkdown()
       const payload: Partial<Pick<Note, "title" | "content" | "tags" | "visibility">> = {
         title,
         content: markdown,

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 
-const STORAGE_KEY = "workspace:openNotes"
+export const STORAGE_KEY = "workspace:openNotes"
 
 /**
  * Manages open note tabs with session persistence.

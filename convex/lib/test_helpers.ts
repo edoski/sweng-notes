@@ -18,7 +18,6 @@ export async function setupUser(
     return await ctx.db.insert("users", {
       clerkId: identity.subject,
       username,
-      updatedAt: Date.now(),
     })
   })
 }

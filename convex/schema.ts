@@ -9,7 +9,6 @@ export default defineSchema({
   users: defineTable({
     clerkId: v.string(),
     username: v.string(),
-    updatedAt: v.number(),
   })
     .index("by_clerkId", ["clerkId"])
     .index("by_username", ["username"]),
