@@ -14,7 +14,7 @@ const http = httpRouter()
 
 // Note: corsRouter returns a wrapper that adds routes to the underlying http router
 const cors = corsRouter(http, {
-  allowedOrigins: ["http://localhost:3000", "http://127.0.0.1:3000"],
+  allowedOrigins: ["http://localhost:3000", "http://127.0.0.1:3000", "https://sweng-notes.vercel.app"],
   allowedHeaders: ["Content-Type", "Authorization"],
   allowCredentials: true,
   browserCacheMaxAge: 86400,
