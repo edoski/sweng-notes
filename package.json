@@ -10,7 +10,7 @@
     "lint": "run-s --continue-on-error lint:*",
     "lint:eslint": "eslint .",
     "lint:tsc": "exec tsc --noEmit",
-    "vercel-build": "convex codegen && convex deploy -y && next build",
+    "vercel-build": "convex codegen && next build",
     "test": "vitest run"
   },
   "dependencies": {

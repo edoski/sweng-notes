@@ -22,9 +22,9 @@ const log = logger.withModule("providers")
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
 
-// Local Convex deployments serve HTTP actions on port 3211 (backend on 3210)
-// Cloud deployments use the same URL for both, so this replace is a no-op
-const convexHttpUrl = convexUrl?.replace(":3210", ":3211") || convexUrl
+// Local deployments: HTTP actions on port 3211 (backend on 3210)
+// Production deployments: .convex.cloud → .convex.site
+const convexHttpUrl = convexUrl?.replace(".convex.cloud", ".convex.site").replace(":3210", ":3211") || convexUrl
 
 type LiveblocksUserInfo = Liveblocks["UserMeta"]["info"]
 

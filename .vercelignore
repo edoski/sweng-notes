@@ -1,0 +1,3 @@
+# Exclude local environment file from Vercel builds
+# This ensures production uses environment variables from Vercel dashboard
+.env.local
