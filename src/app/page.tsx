@@ -1,7 +1,8 @@
 "use client"
 
 import { useMemo, useCallback } from "react"
-import { RedirectToSignIn, useUser } from "@clerk/nextjs"
+import { RedirectToSignIn } from "@clerk/nextjs"
+import { Authenticated, Unauthenticated, AuthLoading } from "convex/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { WorkspaceShell } from "@/components/features/workspace/workspace-shell"
 import { WorkspaceDataProvider } from "@/components/features/workspace/workspace-data-context"
@@ -124,14 +125,21 @@ function Workspace() {
 }
 
 export default function WorkspacePage() {
-  const { isLoaded, isSignedIn } = useUser()
-
-  if (!isLoaded) return null
-  if (!isSignedIn) return <RedirectToSignIn />
-
   return (
-    <NoteDialogProvider>
-      <Workspace />
-    </NoteDialogProvider>
+    <>
+      <AuthLoading>
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </AuthLoading>
+      <Unauthenticated>
+        <RedirectToSignIn />
+      </Unauthenticated>
+      <Authenticated>
+        <NoteDialogProvider>
+          <Workspace />
+        </NoteDialogProvider>
+      </Authenticated>
+    </>
   )
 }

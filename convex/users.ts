@@ -2,11 +2,14 @@ import { ConvexError } from "convex/values"
 import type { Id } from "./_generated/dataModel"
 import { z } from "zod/v3"
 import { zid } from "convex-helpers/server/zod"
-import { authedQuery, authedMutation, zMutation, zQuery } from "./lib/zod"
+import { authedQuery, authedMutation, zMutation, zQuery, zInternalAction } from "./lib/zod"
 import { deleteAllNoteTags, getNoteTags } from "./lib/note_tags"
 import { revokeAllCollaborators } from "./lib/note_permissions"
 import { pruneTag } from "./lib/tags"
 import { internal } from "./_generated/api"
+import { logger } from "./lib/logger"
+
+const log = logger.withModule("users")
 
 const ClerkIdListSchema = z
   .array(
@@ -91,7 +94,7 @@ export const ensure = zMutation({
 /**
  * Get user by Clerk ID
  * Used by Liveblocks authentication to resolve user profiles for real-time collaboration
- * See: src/lib/liveblocks-server-utils.ts
+ * See: convex/http.ts (liveblocks-auth endpoint)
  */
 export const getByClerkId = zQuery({
   args: {
@@ -235,5 +238,56 @@ export const deleteAccount = authedMutation({
 
     // 4. Delete the user record
     await ctx.db.delete(user._id)
+
+    // 5. Schedule Clerk user deletion
+    await ctx.scheduler.runAfter(0, internal.users.deleteClerkUser, {
+      clerkId: user.clerkId,
+    })
+  },
+})
+
+/**
+ * Delete a Clerk user account via Clerk Management API.
+ * Called internally after Convex data cleanup completes.
+ */
+export const deleteClerkUser = zInternalAction({
+  args: {
+    clerkId: z.string().min(1, "clerkId is required"),
+  },
+  handler: async (_ctx, { clerkId }) => {
+    const secretKey = process.env.CLERK_SECRET_KEY
+
+    if (!secretKey) {
+      log.error("CLERK_SECRET_KEY not set in Convex environment.")
+      return
+    }
+
+    try {
+      const response = await fetch(`https://api.clerk.com/v1/users/${clerkId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${secretKey}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        log.error("Clerk API error", {
+          clerkId,
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+        })
+        return
+      }
+
+      log.info("Successfully deleted Clerk user", { clerkId })
+    } catch (error) {
+      log.error("Failed to delete Clerk user", {
+        clerkId,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
   },
 })

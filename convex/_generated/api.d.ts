@@ -8,8 +8,10 @@
  * @module
  */
 
+import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_dates from "../lib/dates.js";
+import type * as lib_liveblocks_user_info from "../lib/liveblocks_user_info.js";
 import type * as lib_logger from "../lib/logger.js";
 import type * as lib_note_access from "../lib/note_access.js";
 import type * as lib_note_filters from "../lib/note_filters.js";
@@ -17,6 +19,7 @@ import type * as lib_note_helpers from "../lib/note_helpers.js";
 import type * as lib_note_permissions from "../lib/note_permissions.js";
 import type * as lib_note_tags from "../lib/note_tags.js";
 import type * as lib_note_titles from "../lib/note_titles.js";
+import type * as lib_presence_info from "../lib/presence_info.js";
 import type * as lib_tags from "../lib/tags.js";
 import type * as lib_test_helpers from "../lib/test_helpers.js";
 import type * as lib_user_helpers from "../lib/user_helpers.js";
@@ -38,8 +41,10 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  http: typeof http;
   "lib/auth": typeof lib_auth;
   "lib/dates": typeof lib_dates;
+  "lib/liveblocks_user_info": typeof lib_liveblocks_user_info;
   "lib/logger": typeof lib_logger;
   "lib/note_access": typeof lib_note_access;
   "lib/note_filters": typeof lib_note_filters;
@@ -47,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   "lib/note_permissions": typeof lib_note_permissions;
   "lib/note_tags": typeof lib_note_tags;
   "lib/note_titles": typeof lib_note_titles;
+  "lib/presence_info": typeof lib_presence_info;
   "lib/tags": typeof lib_tags;
   "lib/test_helpers": typeof lib_test_helpers;
   "lib/user_helpers": typeof lib_user_helpers;

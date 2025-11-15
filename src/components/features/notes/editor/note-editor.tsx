@@ -293,11 +293,8 @@ function NoteEditorRoomContent({
     handleRestoreVersion,
   } = useNoteVersionHistory({
     noteId,
-    note,
-    currentUser,
     isOwner,
     editor,
-    replaceTitle,
   })
 
   const handleAddTagToNote = useCallback(

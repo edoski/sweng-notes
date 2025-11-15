@@ -46,6 +46,53 @@ export const list = noteQuery({
   },
 })
 
+/**
+ * List versions with UI-ready display fields (owner label, isCurrent flag)
+ * Optimized for version history UI - computes display logic server-side
+ */
+export const listForDisplay = noteQuery({
+  requirePermission: "owner",
+  unauthorizedMessage: "Only owners can view version history",
+})({
+  args: {
+    limit: z.number().int().min(1).optional(),
+  },
+  handler: async (ctx, { limit }) => {
+    const { note } = ctx.noteAccess as { status: "ok"; note: Doc<"notes">; permission: "owner" }
+    const { user: currentUser } = ctx.viewer
+
+    const versions = await ctx.db
+      .query("noteVersions")
+      .withIndex("by_note", (q) => q.eq("noteId", note._id))
+      .collect()
+
+    const sorted = versions.sort((a, b) => a._creationTime - b._creationTime)
+    const sliced = limit ? sorted.slice(0, limit) : sorted
+
+    return Promise.all(
+      sliced.map(async (version, index) => {
+        const owner = await ctx.db.get(version.ownerId)
+        const ownerUsername = owner?.username ?? "Unknown"
+        const versionNumber = index + 1
+
+        // Compute display fields server-side
+        const ownerLabel = ownerUsername === currentUser.username ? "You" : ownerUsername
+        const isCurrent = note.activeVersionId
+          ? version._id === note.activeVersionId
+          : versionNumber === note.version
+
+        return {
+          ...toVersionDto(version),
+          versionNumber,
+          ownerUsername,
+          ownerLabel,
+          isCurrent,
+        }
+      })
+    )
+  },
+})
+
 export const restore = noteMutation({
   requirePermission: "owner",
 })({

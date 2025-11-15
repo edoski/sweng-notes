@@ -7,6 +7,7 @@ import { useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import { notify } from "@/lib/notifications"
 import { logger } from "@/convex/lib/logger"
+import { useAccountDeletion } from "@/contexts/account-deletion-context"
 
 const log = logger.withModule("use-delete-account")
 
@@ -15,6 +16,7 @@ export function useDeleteAccount() {
   const deleteAccountMutation = useMutation(api.users.deleteAccount)
   const { user } = useUser()
   const router = useRouter()
+  const { setDeletingAccount } = useAccountDeletion()
 
   const deleteAccount = async () => {
     if (!user) {
@@ -25,18 +27,18 @@ export function useDeleteAccount() {
     setIsDeleting(true)
 
     try {
-      // Delete all user data from Convex
+      // 1. Signal deletion intent (skips queries synchronously)
+      setDeletingAccount(true)
+
+      // 2. Delete all user data from Convex (includes Clerk user deletion via backend)
       await deleteAccountMutation({})
 
-      // Navigate away IMMEDIATELY (unmounts component, cancels React queries)
-      router.push("/")
-
-      // Show success and sign out (no errors - component is unmounted)
-      notify({ type: "auth.signedOut", level: "info", message: "Account deleted successfully" })
-      await user.delete()
+      // 3. Navigate away IMMEDIATELY (user will be signed out when Clerk deletion completes)
+      router.push("/login")
     } catch (error) {
       log.error("Failed to delete account", { error })
       notify(error, "Failed to delete account. Please try again.")
+      setDeletingAccount(false)
       setIsDeleting(false)
     }
   }

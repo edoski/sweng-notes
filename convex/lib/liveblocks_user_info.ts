@@ -1,4 +1,4 @@
-import { getPresenceInfo } from "./presence-info"
+import { getPresenceInfo } from "./presence_info"
 
 /**
  * Builds standardized Liveblocks user info for UserMeta.

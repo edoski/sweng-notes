@@ -86,6 +86,8 @@
 
 import {
   internalAction,
+  internalMutation,
+  internalQuery,
   mutation,
   query,
   type MutationCtx,
@@ -94,7 +96,7 @@ import {
 import { NoOp } from "convex-helpers/server/customFunctions"
 import { ConvexError, v } from "convex/values"
 import { zCustomAction, zCustomMutation, zCustomQuery } from "convex-helpers/server/zod"
-import { requireViewer } from "./auth"
+import { requireViewer, requireViewerMutation } from "./auth"
 import { fetchNoteAccess, type NoteAccessStatus, type NotePermission } from "./note_access"
 import type { Id } from "../_generated/dataModel"
 
@@ -146,8 +148,6 @@ export interface NoteBuilderOptions {
 // Helper Functions
 // ============================================================================
 
-type AnyCtx = QueryCtx | MutationCtx
-
 const normalizeRequiredPermissions = (
   value: NoteBuilderOptions["requirePermission"],
 ): NotePermission[] | null => {
@@ -157,20 +157,64 @@ const normalizeRequiredPermissions = (
   return Array.isArray(value) ? value : [value]
 }
 
-const createAuthedInput = async (ctx: AnyCtx) => ({
+const createAuthedQueryInput = async (ctx: QueryCtx) => ({
   ctx: {
     viewer: await requireViewer(ctx),
   } satisfies AuthedCtx,
   args: {},
 })
 
-const createNoteScopedInput = (
+const createAuthedMutationInput = async (ctx: MutationCtx) => ({
+  ctx: {
+    viewer: await requireViewerMutation(ctx),
+  } satisfies AuthedCtx,
+  args: {},
+})
+
+const createNoteScopedQueryInput = (
   options?: NoteBuilderOptions,
   defaultUnauthorizedMessage = "Access denied",
 ) =>
-  async (ctx: AnyCtx, args: Record<string, unknown>) => {
-    // Reuse authentication logic from createAuthedInput
-    const { ctx: authedCtx } = await createAuthedInput(ctx)
+  async (ctx: QueryCtx, args: Record<string, unknown>) => {
+    // Reuse authentication logic from createAuthedQueryInput
+    const { ctx: authedCtx } = await createAuthedQueryInput(ctx)
+    const viewer = authedCtx.viewer
+
+    const opts = options ?? {}
+    const requiredPermissions = normalizeRequiredPermissions(opts.requirePermission)
+
+    const noteId = args.noteId as Id<"notes">
+    let access = await fetchNoteAccess(ctx, noteId, viewer.user._id)
+
+    // Downgrade access to unauthorized if user lacks required permission
+    if (access.status === "ok" && requiredPermissions && !requiredPermissions.includes(access.permission)) {
+      access = { status: "unauthorized" }
+    }
+
+    // Throw error if access failed and not optional
+    if (access.status !== "ok" && !opts.optional) {
+      if (access.status === "not_found") {
+        throw new ConvexError(opts.notFoundMessage ?? "We couldn't find that note. It may have been deleted.")
+      }
+      throw new ConvexError(opts.unauthorizedMessage ?? defaultUnauthorizedMessage)
+    }
+
+    return {
+      ctx: {
+        viewer,
+        noteAccess: access,
+      } satisfies NoteCtx,
+      args: args,
+    }
+  }
+
+const createNoteScopedMutationInput = (
+  options?: NoteBuilderOptions,
+  defaultUnauthorizedMessage = "Insufficient permissions",
+) =>
+  async (ctx: MutationCtx, args: Record<string, unknown>) => {
+    // Reuse authentication logic from createAuthedMutationInput
+    const { ctx: authedCtx } = await createAuthedMutationInput(ctx)
     const viewer = authedCtx.viewer
 
     const opts = options ?? {}
@@ -207,6 +251,8 @@ const createNoteScopedInput = (
 
 export const zQuery = zCustomQuery(query, NoOp)
 export const zMutation = zCustomMutation(mutation, NoOp)
+export const zInternalQuery = zCustomQuery(internalQuery, NoOp)
+export const zInternalMutation = zCustomMutation(internalMutation, NoOp)
 export const zInternalAction = zCustomAction(internalAction, NoOp)
 
 // ============================================================================
@@ -215,12 +261,12 @@ export const zInternalAction = zCustomAction(internalAction, NoOp)
 
 export const authedQuery = zCustomQuery(query, {
   args: {},
-  input: createAuthedInput,
+  input: createAuthedQueryInput,
 })
 
 export const authedMutation = zCustomMutation(mutation, {
   args: {},
-  input: createAuthedInput,
+  input: createAuthedMutationInput,
 })
 
 // ============================================================================
@@ -266,7 +312,7 @@ export const noteQuery = (options?: NoteBuilderOptions) =>
     args: {
       noteId: v.id("notes"),
     },
-    input: createNoteScopedInput(options, "Access denied"),
+    input: createNoteScopedQueryInput(options, "Access denied"),
   })
 
 /**
@@ -279,5 +325,5 @@ export const noteMutation = (options?: NoteBuilderOptions) =>
     args: {
       noteId: v.id("notes"),
     },
-    input: createNoteScopedInput(options, "Insufficient permissions"),
+    input: createNoteScopedMutationInput(options, "Insufficient permissions"),
   })

@@ -1,7 +1,7 @@
 "use client"
 
 import type {ReactNode} from "react"
-import {createContext, useCallback, useContext, useEffect, useState} from "react"
+import {useCallback, useEffect, useState} from "react"
 import {ConvexProviderWithClerk} from "convex/react-clerk"
 import {ConvexReactClient, useMutation} from "convex/react"
 import {useAuth, useUser} from "@clerk/nextjs"
@@ -11,38 +11,26 @@ import {notify} from "@/lib/notifications"
 import pRetry from "p-retry"
 import {api} from "@/convex/_generated/api"
 import type {Id} from "@/convex/_generated/dataModel"
-import {buildLiveblocksUserInfo} from "@/lib/liveblocks-user-info"
+import {buildLiveblocksUserInfo} from "@/convex/lib/liveblocks_user_info"
 import {ErrorBoundary} from "./error-boundary"
 import {logger} from "@/convex/lib/logger"
 import {usePrevious} from "@/hooks/use-previous"
 import {STORAGE_KEY} from "@/hooks/use-persisted-tabs"
+import {AccountDeletionProvider} from "@/contexts/account-deletion-context"
 
 const log = logger.withModule("providers")
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
 
+// Local Convex deployments serve HTTP actions on port 3211 (backend on 3210)
+// Cloud deployments use the same URL for both, so this replace is a no-op
+const convexHttpUrl = convexUrl?.replace(":3210", ":3211") || convexUrl
+
 type LiveblocksUserInfo = Liveblocks["UserMeta"]["info"]
 
-/**
- * Context to synchronize authenticated Convex queries with user record creation.
- *
- * **Problem:** First-time registration causes "session expired" errors because
- * authenticated queries (notes.list, tags.list) execute before the async
- * users.ensure mutation completes, resulting in queries being called when
- * the user record doesn't exist yet in the Convex database.
- *
- * **Solution:** This context tracks the completion of users.ensure, and
- * queries check isConvexUserReady before executing (using Convex's "skip" parameter).
- *
- * **Non-signed-in users:** Context value is true to allow public queries.
- */
-const ConvexUserReadyContext = createContext<boolean>(false)
-
-export function useConvexUserReady() {
-  return useContext(ConvexUserReadyContext)
-}
-
 export function AppProviders({ children }: { children: ReactNode }) {
+  const { getToken } = useAuth()
+
   const [convexClient] = useState(() => {
     if (!convexUrl) {
       throw new Error("NEXT_PUBLIC_CONVEX_URL is not configured")
@@ -93,54 +81,48 @@ export function AppProviders({ children }: { children: ReactNode }) {
   )
 
   return (
-    <ErrorBoundary>
-      <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
-        <LiveblocksProvider
-          authEndpoint={"/api/liveblocks-auth"}
-          resolveUsers={resolveUsers}
-          resolveMentionSuggestions={resolveMentionSuggestions}
-        >
-          <AuthToastWatcher />
-          <EnsureConvexUser>
+    <AccountDeletionProvider>
+      <ErrorBoundary>
+        <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
+          <LiveblocksProvider
+            authEndpoint={async (room) => {
+              const token = await getToken({ template: "convex" })
+
+              const response = await fetch(`${convexHttpUrl}/liveblocks-auth`, {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ room }),
+              })
+
+              if (!response.ok) {
+                const errorData = await response.json()
+                const errorMessage = errorData.details || errorData.error || "Authentication failed"
+                throw new Error(errorMessage)
+              }
+
+              return await response.json()
+            }}
+            resolveUsers={resolveUsers}
+            resolveMentionSuggestions={resolveMentionSuggestions}
+          >
+            <AuthToastWatcher />
+            <AvatarSetupTask />
             {children}
-          </EnsureConvexUser>
-          <Toaster richColors closeButton position="top-right" duration={3000} />
-        </LiveblocksProvider>
-      </ConvexProviderWithClerk>
-    </ErrorBoundary>
+            <Toaster richColors closeButton position="top-right" duration={3000} />
+          </LiveblocksProvider>
+        </ConvexProviderWithClerk>
+      </ErrorBoundary>
+    </AccountDeletionProvider>
   )
 }
 
-function EnsureConvexUser({ children }: { children: ReactNode }) {
-  const { isLoaded: isClerkLoaded, isSignedIn } = useUser()
-
-  if (!isClerkLoaded) {
-    return null
-  }
-
-  // Key by isSignedIn to reset state when user signs out
-  return isSignedIn ? (
-    <EnsureConvexUserInner key="signed-in">{children}</EnsureConvexUserInner>
-  ) : (
-    <ConvexUserReadyContext.Provider value={true}>{children}</ConvexUserReadyContext.Provider>
-  )
-}
-
-function EnsureConvexUserInner({ children }: { children: ReactNode }) {
-  const [isConvexUserReady, setIsConvexUserReady] = useState(false)
-  const onReady = useCallback(() => setIsConvexUserReady(true), [])
-
-  return (
-    <ConvexUserReadyContext.Provider value={isConvexUserReady}>
-      <EnsureConvexUserTask onReady={onReady} />
-      {children}
-    </ConvexUserReadyContext.Provider>
-  )
-}
-
-function EnsureConvexUserTask({ onReady }: { onReady: () => void }) {
+function AvatarSetupTask() {
   const ensure = useMutation(api.users.ensure)
   const { user } = useUser()
+  const { getToken } = useAuth()
   const userId = user?.id
   const hasImage = user?.hasImage
 
@@ -161,24 +143,30 @@ function EnsureConvexUserTask({ onReady }: { onReady: () => void }) {
         })
       },
     })
-      .then(() => {
+      .then(async () => {
         // Mutation succeeded - user record exists
         // Setup DiceBear avatar in Clerk profile (fire-and-forget)
         // Only call if user doesn't already have an image
         if (!hasImage) {
-          fetch("/api/setup-avatar", { method: "POST" }).catch((error) => {
+          try {
+            const token = await getToken({ template: "convex" })
+            await fetch(`${convexHttpUrl}/setup-avatar`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            })
+          } catch (error) {
             log.warn("Failed to setup avatar, user will have default Clerk avatar", { error })
-          })
+          }
         }
       })
       .catch((error) => {
         log.error("Failed to ensure Convex user after all retry attempts", { error })
         // Still allow UI to proceed (graceful degradation)
       })
-      .finally(() => {
-        onReady()
-      })
-  }, [ensure, onReady, userId, hasImage])
+  }, [ensure, userId, hasImage, getToken])
 
   return null
 }

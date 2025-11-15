@@ -1,14 +1,11 @@
 import { useMemo } from "react"
-import { useQueries, useQuery } from "convex/react"
+import { useQuery } from "convex/react"
 import { useUser } from "@clerk/nextjs"
 import { api } from "@/convex/_generated/api"
 import type { Id } from "@/convex/_generated/dataModel"
 import type { DateFilter } from "@/components/features/workspace/types"
 import type { AuthorSelection } from "@/hooks/use-workspace-url-state"
-import { useConvexUserReady } from "@/components/shared/providers"
-
-type QueriesRequest = Parameters<typeof useQueries>[0]
-type NoteQueryResult = typeof api.notes.queries.get._returnType
+import { useAccountDeletion } from "@/contexts/account-deletion-context"
 
 interface UseWorkspaceDataParams {
   searchQuery: string
@@ -28,21 +25,25 @@ export function useWorkspaceData({
 
   // Get current user from Clerk (client-side, no network call)
   const { user, isLoaded: isUserLoaded } = useUser()
-  const isConvexUserReady = useConvexUserReady()
+
+  // Get account deletion state
+  const { isDeletingAccount } = useAccountDeletion()
 
   const currentUser = useMemo(() => {
+    // Skip all queries during account deletion
+    if (isDeletingAccount) return undefined
     if (!isUserLoaded) return undefined
     if (!user) return null
     return {
       id: user.id,
       username: user.username ?? "Unknown",
     }
-  }, [isUserLoaded, user])
+  }, [isDeletingAccount, isUserLoaded, user])
 
   // Query notes list with filters
   const notes = useQuery(
     api.notes.queries.list,
-    currentUser && isConvexUserReady
+    currentUser
       ? {
           search: searchQuery || undefined,
           tags: selectedTags.length > 0 ? selectedTags : undefined,
@@ -52,64 +53,57 @@ export function useWorkspaceData({
       : "skip",
   )
 
-  // Query open note tabs
-  const noteQueries = useMemo<QueriesRequest>(() => {
-    // Don't query if user record not ready yet
-    if (!isConvexUserReady) return {}
-
-    const queries: QueriesRequest = {}
-    for (const noteId of openNotes) {
-      queries[noteId] = {
-        query: api.notes.queries.get,
-        args: { noteId: noteId as unknown as Id<"notes"> },
-      }
-    }
-    return queries
-  }, [openNotes, isConvexUserReady])
-
-  const noteQueryResults = useQueries(noteQueries)
+  // Query open note tabs (batch query - single network call)
+  const batchNotesResult = useQuery(
+    api.notes.queries.batchGet,
+    currentUser && openNotes.length > 0
+      ? { noteIds: openNotes as unknown as Id<"notes">[] }
+      : "skip",
+  )
 
   const openNoteTabs = useMemo(() => {
+    // If notes list hasn't loaded yet, return loading state for all
     if (!notes) return openNotes.map((noteId) => ({ id: noteId, note: null, status: "loading" as const }))
+
+    // Create map from notes list for fallback
     const listMap = new Map(notes.map((note) => [note.id as unknown as string, note]))
+
+    // If batch query is still loading, return loading state for all
+    if (batchNotesResult === undefined) {
+      return openNotes.map((noteId) => ({ id: noteId, note: null, status: "loading" as const }))
+    }
+
+    // Transform batch result into Map for O(1) lookup
+    // batchGet returns: Array<{ noteId: Id<"notes">, note: Note | null }>
+    const noteById = new Map(
+      batchNotesResult.map((item) => [item.noteId as unknown as string, item.note])
+    )
+
     return openNotes.map((noteId) => {
-      const result = noteQueryResults[noteId] as NoteQueryResult | Error | undefined
-      if (result instanceof Error) {
-        return {
-          id: noteId,
-          note: listMap.get(noteId) ?? null,
-          status: "error" as const,
-          error: result,
-        }
-      }
-      if (result === undefined) {
-        return {
-          id: noteId,
-          note: null,
-          status: "loading" as const,
-        }
-      }
-      if (result === null) {
+      const result = noteById.get(noteId)
+
+      if (result === null || result === undefined) {
+        // Note not found or access denied
         return {
           id: noteId,
           note: listMap.get(noteId) ?? null,
           status: "error" as const,
         }
       }
+
       return {
         id: noteId,
         note: result,
         status: "ready" as const,
       }
     })
-  }, [notes, openNotes, noteQueryResults])
+  }, [notes, openNotes, batchNotesResult])
 
-  // Query tag summaries
-  const tagSummaries = useQuery(api.tags.list, currentUser && isConvexUserReady ? {} : "skip")
-  const tagNames = useMemo(() => {
-    if (!tagSummaries) return []
-    return tagSummaries.map((tag) => tag.name)
-  }, [tagSummaries])
+  // Query tag summaries (for sidebar filters that need metadata)
+  const tagSummaries = useQuery(api.tags.list, currentUser ? {} : "skip")
+
+  // Query tag names (optimized for autocomplete/command palette)
+  const tagNames = useQuery(api.tags.listNames, currentUser ? {} : "skip")
 
   return {
     currentUser,
@@ -117,6 +111,6 @@ export function useWorkspaceData({
     isNotesLoading: notes === undefined,
     openNoteTabs,
     tagSummaries: tagSummaries ?? [],
-    tagNames,
+    tagNames: tagNames ?? [],
   }
 }

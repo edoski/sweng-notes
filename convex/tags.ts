@@ -41,6 +41,24 @@ export const list = authedQuery({
   },
 })
 
+export const listNames = authedQuery({
+  args: {},
+  handler: async (ctx) => {
+    const { user } = ctx.viewer
+
+    // Fetch all user's tags (both local and shared)
+    const tags = await ctx.db
+      .query("tags")
+      .withIndex("by_owner_name", (q) => q.eq("ownerId", user._id))
+      .collect()
+
+    // Return just the tag names, sorted alphabetically
+    return tags
+      .map((tag) => tag.name)
+      .sort((a, b) => a.localeCompare(b))
+  },
+})
+
 export const create = authedMutation({
   args: {
     name: TagNameSchema,

@@ -4,7 +4,6 @@ import { usePrevious } from "@/hooks/use-previous"
 import { notify } from "@/lib/notifications"
 import { api } from "@/convex/_generated/api"
 import type { Id } from "@/convex/_generated/dataModel"
-import { useConvexUserReady } from "@/components/shared/providers"
 
 // ============================================================================
 // TYPES
@@ -47,10 +46,9 @@ export function useNoteAccessNotifications({
 }: UseNoteAccessNotificationsParams): {
   registerManualLeave: (noteId: Id<"notes">) => void
 } {
-  const isConvexUserReady = useConvexUserReady()
   const permissions = useQuery(
     api.permissions.myPermissions,
-    currentUser && isConvexUserReady ? {} : "skip"
+    currentUser ? {} : "skip"
   )
   const previousPermissions = usePrevious(permissions)
   const manualActions = useRef<Set<string>>(new Set())

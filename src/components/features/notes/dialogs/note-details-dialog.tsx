@@ -11,7 +11,6 @@ import type { Note } from "@/convex/lib/note_helpers"
 import { api } from "@/convex/_generated/api"
 import type { Id } from "@/convex/_generated/dataModel"
 import type { Collaborator } from "./share-dialog"
-import { useConvexUserReady } from "@/components/shared/providers"
 
 interface NoteDetailsDialogProps {
   note: Note
@@ -25,11 +24,10 @@ function collaboratorCompare(a: Collaborator, b: Collaborator) {
 
 export function NoteDetailsDialog({ note, open, onOpenChange }: NoteDetailsDialogProps) {
   const noteId = note.id as unknown as Id<"notes">
-  const isConvexUserReady = useConvexUserReady()
 
   const shareResult = useQuery(
     api.sharing.listCollaborators,
-    isConvexUserReady && open ? { noteId } : "skip"
+    open ? { noteId } : "skip"
   )
   const shareQueryError = shareResult instanceof Error ? shareResult : null
   const shareInfo = shareResult instanceof Error || shareResult === undefined ? undefined : shareResult

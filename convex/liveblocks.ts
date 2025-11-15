@@ -1,8 +1,24 @@
 import { z } from "zod/v3"
-import { zInternalAction } from "./lib/zod"
+import { zid } from "convex-helpers/server/zod"
+import { zInternalAction, zInternalQuery } from "./lib/zod"
 import { logger } from "./lib/logger"
+import { fetchNoteAccess } from "./lib/note_access"
 
 const log = logger.withModule("liveblocks")
+
+/**
+ * Internal query to check note access for Liveblocks authentication
+ * Used by HTTP action in convex/http.ts to verify user has permission to join a room
+ */
+export const checkNoteAccess = zInternalQuery({
+  args: {
+    noteId: zid("notes"),
+    userId: zid("users"),
+  },
+  handler: async (ctx, { noteId, userId }) => {
+    return await fetchNoteAccess(ctx, noteId, userId)
+  },
+})
 
 /**
  * Delete a Liveblocks room using the REST API

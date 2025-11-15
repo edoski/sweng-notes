@@ -8,36 +8,21 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const rootDir = join(__dirname, "..")
 
-try {
-  // Read .env.local
-  const envPath = join(rootDir, ".env.local")
-  const content = readFileSync(envPath, "utf-8")
+// Environment variables to sync from .env.local to Convex
+const ENV_VARS = ["LIVEBLOCKS_SECRET_KEY", "CLERK_SECRET_KEY"]
 
-  // Extract LIVEBLOCKS_SECRET_KEY
-  const match = content.match(/^LIVEBLOCKS_SECRET_KEY=(.*)$/m)
-  if (!match) {
-    console.log("ℹ No LIVEBLOCKS_SECRET_KEY found in .env.local")
-    process.exit(0)
-  }
-
-  const value = match[1].trim()
-  if (!value) {
-    console.log("ℹ LIVEBLOCKS_SECRET_KEY is empty")
-    process.exit(0)
-  }
-
-  // Set in Convex with retry logic (fallback safety net)
+function syncEnvVar(name, value) {
   let retries = 3
   let lastError
 
   while (retries > 0) {
     try {
-      execSync(`npx convex env set LIVEBLOCKS_SECRET_KEY "${value}"`, {
+      execSync(`npx convex env set ${name} "${value}"`, {
         cwd: rootDir,
         stdio: "pipe"
       })
-      console.log("  → LIVEBLOCKS_SECRET_KEY synced")
-      break // Success!
+      console.log(`  → ${name} synced`)
+      return true
     } catch (error) {
       lastError = error
 
@@ -57,6 +42,29 @@ try {
   // If we exhausted retries, throw the last error
   if (retries === 0 && lastError) {
     throw lastError
+  }
+}
+
+try {
+  // Read .env.local
+  const envPath = join(rootDir, ".env.local")
+  const content = readFileSync(envPath, "utf-8")
+
+  // Sync each environment variable
+  for (const varName of ENV_VARS) {
+    const match = content.match(new RegExp(`^${varName}=(.*)$`, "m"))
+    if (!match) {
+      console.log(`ℹ No ${varName} found in .env.local`)
+      continue
+    }
+
+    const value = match[1].trim()
+    if (!value) {
+      console.log(`ℹ ${varName} is empty`)
+      continue
+    }
+
+    syncEnvVar(varName, value)
   }
 } catch (error) {
   // Only log if it's not a "no deployment" error

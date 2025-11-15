@@ -4,60 +4,44 @@ import { useMutation, useQuery } from "convex/react"
 
 import { api } from "@/convex/_generated/api"
 import type { Id } from "@/convex/_generated/dataModel"
-import type { Note } from "@/convex/lib/note_helpers"
 import type { VersionHistoryItem } from "./version-history"
 import type { Editor } from "@tiptap/react"
 
 import { useNoteDialog } from "@/contexts/note-dialog-context"
-import { useConvexUserReady } from "@/components/shared/providers"
 
 interface UseNoteVersionHistoryOptions {
   noteId: Id<"notes">
-  note: Note
-  currentUser: { id: string; username: string }
   isOwner: boolean
   editor: Editor | null
-  replaceTitle: (title: string) => void
 }
 
 export function useNoteVersionHistory({
   noteId,
-  note,
-  currentUser,
   isOwner,
   editor,
-  replaceTitle,
 }: UseNoteVersionHistoryOptions) {
   const { isDialogOpen, openDialog, closeDialog } = useNoteDialog()
   const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null)
-  const isConvexUserReady = useConvexUserReady()
 
   const showVersionHistory = isDialogOpen(noteId, "versionHistory")
 
   const versionsData = useQuery(
-    api.versions.list,
-    isConvexUserReady && isOwner && showVersionHistory ? { noteId } : "skip",
+    api.versions.listForDisplay,
+    isOwner && showVersionHistory ? { noteId } : "skip",
   )
 
   const versionItems = useMemo<VersionHistoryItem[]>(() => {
     if (!versionsData) return []
-    const currentVersionId = note.activeVersionId
-    return versionsData.map((version) => {
-      const ownerLabel = version.ownerUsername === currentUser.username ? "You" : version.ownerUsername
-      const isCurrent = currentVersionId
-        ? version.id === currentVersionId
-        : version.versionNumber === note.version
-      return {
-        id: version.id,
-        versionNumber: version.versionNumber,
-        owner: ownerLabel,
-        createdAt: version.createdAt,
-        title: version.title,
-        snapshot: version.snapshot,
-        isCurrent,
-      }
-    })
-  }, [versionsData, note.activeVersionId, note.version, currentUser.username])
+    return versionsData.map((version) => ({
+      id: version.id,
+      versionNumber: version.versionNumber,
+      owner: version.ownerLabel,
+      createdAt: version.createdAt,
+      title: version.title,
+      snapshot: version.snapshot,
+      isCurrent: version.isCurrent,
+    }))
+  }, [versionsData])
 
   const restoreVersionMutation = useMutation(api.versions.restore)
 
